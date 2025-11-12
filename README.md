@@ -1,7 +1,3 @@
-<img src="https://img.shields.io/github/downloads/Elcapitanoe/Build-Prop-BETA/total?style=flat-square&color=7490ac&label=Total%20Download" alt="Total downloads">
-
-<hr />
-
 # Pixel Prop Builder: Streamlined OTA to Build.prop Conversion
 
 Effortlessly extract and manage system properties from Pixel OTA updates with this robust automation suite. Designed for developers and enthusiasts alike, it simplifies the process of accessing and customizing Android build properties.
