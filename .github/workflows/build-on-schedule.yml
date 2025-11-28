@@ -3,7 +3,7 @@ name: Build props (on schedule)
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 17 13,27 * *'
+    - cron: '0 0 1 * *'
 
 jobs:
   prepare_build:
@@ -35,7 +35,7 @@ jobs:
     needs: prepare_build
     strategy:
       matrix:
-        device_name: [oriole_beta16, raven_beta16, panther_beta16, cheetah_beta16, lynx_beta16, felix_beta16, tangorpro_beta16, shiba_beta16, husky_beta16, akita_beta16, tokay_beta16, caiman_beta16, komodo_beta16, comet_beta16]
+        device_name: [felix_beta16, tangorpro_beta16, shiba_beta16, husky_beta16, akita_beta16, tokay_beta16, caiman_beta16, komodo_beta16, comet_beta16]
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
