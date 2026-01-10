@@ -39,9 +39,9 @@ Effortlessly extract and manage system properties from Pixel OTA updates with th
 
 ## Usage
 
-1. **Obtain Pixel Images**: Download the desired factory or OTA images from [Google Android Images](https://developers.google.com/android/images) or the [Beta OTA Pages](https://developer.android.com/about/versions/15/download-ota).
+1. **Obtain Pixel Images**: Download the desired factory or OTA images from [Google Android Images](https://developers.google.com/android/images), [Beta OTA Pages](https://developer.android.com/about/versions/15/download-ota) or the [Beta OTA QPR2 Pages](https://developer.android.com/about/versions/16/qpr2/download-ota).
 2. **Stay Up-to-Date**:
-    - Fetch the latest OTA images with `./download_latest_ota_build.sh <device_name1> <device_name2> ...` (e.g., `husky`, `felix_beta`, `cheetah`, `akita_beta15`).
+    - Fetch the latest OTA images with `./download_latest_ota_build.sh <device_name1> <device_name2> ...` (e.g., `husky`, `felix_beta`, `akita_beta15`, `akita_beta2`).
 3. **Effortless Extraction**:
     - Place the downloaded image files within the project's workspace.
     - Execute `./extract_images.sh` to automatically extract images and their build properties into `result/Codename_ID ...`.
