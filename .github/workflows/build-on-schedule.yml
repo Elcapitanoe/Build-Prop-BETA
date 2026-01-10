@@ -35,13 +35,10 @@ jobs:
     needs: prepare_build
     strategy:
       matrix:
-        device_name: [frankel_beta2, blazer_beta2, mustang_beta2]
+        device_name: [tokay_beta2, caiman_beta2, komodo_beta2, comet_beta2, frankel_beta2, blazer_beta2, mustang_beta2, rango_beta2]
 
-    # Using ubuntu-22.04 is recommended for 'maximize-build-space' stability
     runs-on: ubuntu-22.04
-
     steps:
-      # --- CRITICAL STEP: Free up disk space BEFORE checkout ---
       - name: Free up disk space
         uses: easimon/maximize-build-space@master
         with:
