@@ -35,13 +35,25 @@ jobs:
     needs: prepare_build
     strategy:
       matrix:
-        device_name: [felix_beta2, tangorpro_beta2, shiba_beta2, husky_beta2, akita_beta2, tokay_beta2, caiman_beta2, komodo_beta2, comet_beta2, frankel_beta2, blazer_beta2, mustang_beta2]
-    runs-on: ubuntu-24.04
+        device_name: [tokay_beta2, caiman_beta2, komodo_beta2, frankel_beta2, blazer_beta2, mustang_beta2]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Free up disk space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 2048    
+          swap-size-mb: 1024      
+          remove-dotnet: 'true'    
+          remove-android: 'true'   
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+      # -----------------------------------------------------
 
       - name: Install APT packages
         run: |
