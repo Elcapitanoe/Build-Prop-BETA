@@ -35,7 +35,7 @@ jobs:
     needs: prepare_build
     strategy:
       matrix:
-        device_name: [frankel_beta2, blazer_beta2, mustang_beta2]
+        device_name: [mustang_beta2]
 
     runs-on: ubuntu-24.04
     steps:
