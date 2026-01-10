@@ -35,7 +35,7 @@ jobs:
     needs: prepare_build
     strategy:
       matrix:
-        device_name: [mustang_beta2]
+        device_name: [frankel_beta2, blazer_beta2, mustang_beta2]
 
     # Using ubuntu-22.04 is recommended for 'maximize-build-space' stability
     runs-on: ubuntu-22.04
