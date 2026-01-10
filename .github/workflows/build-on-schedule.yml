@@ -37,8 +37,23 @@ jobs:
       matrix:
         device_name: [mustang_beta2]
 
-    runs-on: ubuntu-24.04
+    # Using ubuntu-22.04 is recommended for 'maximize-build-space' stability
+    runs-on: ubuntu-22.04
+
     steps:
+      # --- CRITICAL STEP: Free up disk space BEFORE checkout ---
+      - name: Free up disk space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 2048    # Keep 2GB for OS stability
+          swap-size-mb: 1024       # 1GB Swap is usually enough
+          remove-dotnet: 'true'    # Removes .NET (saves ~20GB)
+          remove-android: 'true'   # Removes Android SDK (saves ~12GB)
+          remove-haskell: 'true'   # Removes Haskell
+          remove-codeql: 'true'    # Removes CodeQL
+          remove-docker-images: 'true' # Removes Docker images
+      # ---------------------------------------------------------
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -46,6 +61,7 @@ jobs:
 
       - name: Install APT packages
         run: |
+          sudo apt update
           sudo apt install -y dos2unix
 
       - name: Activate venv
