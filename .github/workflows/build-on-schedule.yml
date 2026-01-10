@@ -35,7 +35,7 @@ jobs:
     needs: prepare_build
     strategy:
       matrix:
-        device_name: [felix_beta16, tangorpro_beta16, shiba_beta16, husky_beta16, akita_beta16, tokay_beta16, caiman_beta16, komodo_beta16, comet_beta16]
+        device_name: [felix_beta2, tangorpro_beta2, shiba_beta2, husky_beta2, akita_beta2, tokay_beta2, caiman_beta2, komodo_beta2, comet_beta2, frankel_beta2, blazer_beta2, mustang_beta2]
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
