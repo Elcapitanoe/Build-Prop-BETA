@@ -38,7 +38,7 @@ name_for_attestation="$(grep_prop "ro.product.name_for_attestation" "$EXT_PROP_C
 # Build our system.prop
 to_system_prop "##
 # Beautiful Pixel Props https://t.me/PixelProps
-# By @T3SL4 and @domi_adiwijaya
+# Script By @T3SL4 and Built By @domi_adiwijaya
 ##
 
 ###
@@ -397,7 +397,7 @@ add_prop_as_ini to_module_prop "id" "${device_codename^}_Props"
 add_prop_as_ini to_module_prop "name" "$device_name (${device_codename^^}) Props"
 add_prop_as_ini to_module_prop "version" "$device_build_security_patch"
 add_prop_as_ini to_module_prop "versionCode" "$(echo "$device_build_security_patch" | tr -d - | cut -c3-)"
-add_prop_as_ini to_module_prop "author" "Tesla And Domi Adiwijaya"
+add_prop_as_ini to_module_prop "author" "Tesla and Domi"
 add_prop_as_ini to_module_prop "description" "Spoof your device props to ${device_codename^^} [$device_build_fingerprint] ($(date --date="$device_build_security_patch" +%b) $(date --date="$device_build_security_patch" +%Y))"
 add_prop_as_ini to_module_prop "donate" "https://wannabe1337.page.link/4xK6"
 add_prop_as_ini to_module_prop "support" "https://t.me/PixelProps"
