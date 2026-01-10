@@ -50,9 +50,9 @@ for input_device_name in "$@"; do # Loop over each argument (device name)
   # --- LOGIC SELECTION ---
   
   if [[ $mode == "beta2" ]]; then
-    # CUSTOM: Android 16 QPR3 Logic
+    # CUSTOM: Android 16 QPR2 Logic
     # Fetches from the specific URL requested
-    target_url="https://developer.android.com/about/versions/16/qpr3/download"
+    target_url="https://developer.android.com/about/versions/16/qpr2/download"
     
     # We grep the ZIP file for the clean codename (e.g., 'komodo')
     last_build_url=$(curl -b "devsite_wall_acks=nexus-ota-tos" -Ls "$target_url?partial=1" | grep -oP "https://\S+${clean_device_name}\S+\.zip" | tail -1)
