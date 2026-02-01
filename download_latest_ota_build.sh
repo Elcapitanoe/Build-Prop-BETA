@@ -1,86 +1,95 @@
 #!/bin/bash
 
-# Using util_functions.sh
-[ -f "util_functions.sh" ] && . ./util_functions.sh || { echo "util_functions.sh not found" && exit 1; }
+# Initialize utility functions dependency
+[ -f "util_functions.sh" ] && . ./util_functions.sh || { echo "Error: util_functions.sh dependency missing." && exit 1; }
 
-# At least one argument has to be provided
-[ -z "$1" ] && print_message "Please provide at least one argument (OTA device codename) !" error
+# Validate that at least one argument (device codename) is supplied
+[ -z "$1" ] && print_message "Error: No device arguments provided. Please specify at least one OTA device codename." error
 
-print_message "Downloading OTA builds for the following devices: $(
+print_message "Initializing OTA payload acquisition for target devices: $(
   IFS=,
   echo "${*:1}"
 )…" info
 unset IFS
 
-# Make sure download directory exists
+# Ensure the existence of the download directory artifact
 mkdir -p "dl"
 
-# Build a list of URL to be downloaded
+# Initialize array to store valid build URLs
 BUILD_URL_LIST=()
 
-# This script downloads the latest OTA build for a list of devices.
-# The device names are passed as arguments to the script.
-for input_device_name in "$@"; do # Loop over each argument (device name)
+# Iterate through provided arguments to process each device individually
+for input_device_name in "$@"; do
 
-  # 1. Check for specific beta2 suffix FIRST (Custom Request)
-  if [[ $input_device_name == *"_beta2"* ]]; then
+  # Determine the operation mode based on specific suffix requirements.
+  # Prioritize specific beta revisions (beta3, beta2) before falling back to standard processing.
+  if [[ $input_device_name == *"_beta3"* ]]; then
+      mode="beta3"
+      # Sanitize input to retrieve base device identifier
+      current_device_name=${input_device_name//_beta3/}
+  elif [[ $input_device_name == *"_beta2"* ]]; then
       mode="beta2"
-      # Remove _beta2 to ensure clean codename extraction
       current_device_name=${input_device_name//_beta2/}
   else
       mode="standard"
       current_device_name=$input_device_name
   fi
 
-  # Extract any possible Android version from the device name
+  # Extract Android version integer from the device identifier string
   android_version=$(echo "$current_device_name" | grep -oP '\K\d+')
 
-  # Check if the Android version is between 14 and 16, otherwise print warning
-  # Only check if version is detected and we are not in beta2 mode (which implies v16)
+  # Validate Android version compatibility (Target range: 14-16).
+  # Conditional execution bypasses validation if version is undetectable or implicit in beta modes.
   if [[ -n $android_version ]]; then
-    [[ $android_version -ge 14 && $android_version -le 16 ]] || print_message "Android version isn't between 14 and 16, Trying anyway…" warning
+    [[ $android_version -ge 14 && $android_version -le 16 ]] || print_message "Warning: Detected Android version is outside the optimized range (14-16). Proceeding with extraction..." warning
   fi
 
-  # Assign android_version, defaulting to 15 if not set
+  # Set default version to 15 if extraction yielded null
   android_version="${android_version:-15}"
 
-  # Remove any numbers from the device name to get pure codename
+  # Sanitize the device identifier by stripping numeric characters to isolate the hardware codename
   clean_device_name=${current_device_name//[^[:alpha:]_]/}
 
-  # --- LOGIC SELECTION ---
+  # --- UPSTREAM SOURCE SELECTION LOGIC ---
   
-  if [[ $mode == "beta2" ]]; then
-    # CUSTOM: Android 16 QPR2 Logic
-    # Fetches from the specific URL requested
+  if [[ $mode == "beta3" ]]; then
+    # LOGIC: Android 16 QPR3 Beta
+    # Targets the specific developer preview URL for QPR3
+    target_url="https://developer.android.com/about/versions/16/qpr3/download-ota"
+    
+    # Parse the upstream page for the ZIP file corresponding to the codename
+    last_build_url=$(curl -b "devsite_wall_acks=nexus-ota-tos" -Ls "$target_url?partial=1" | grep -oP "https://\S+${clean_device_name}\S+\.zip" | tail -1)
+
+  elif [[ $mode == "beta2" ]]; then
+    # LOGIC: Android 16 QPR2 Beta
+    # Targets the specific developer preview URL for QPR2
     target_url="https://developer.android.com/about/versions/16/qpr2/download-ota"
     
-    # We grep the ZIP file for the clean codename (e.g., 'komodo')
     last_build_url=$(curl -b "devsite_wall_acks=nexus-ota-tos" -Ls "$target_url?partial=1" | grep -oP "https://\S+${clean_device_name}\S+\.zip" | tail -1)
 
   elif [[ $clean_device_name == *_beta* ]]; then
-    # STANDARD BETA LOGIC
-    # If it does, fetch the URL of the latest beta build for the device from the beta builds page
+    # LOGIC: Generic Beta Program
+    # Dynamic URL generation based on detected Android version
     last_build_url=$(curl -b "devsite_wall_acks=nexus-ota-tos" -Ls "https://developer.android.com/about/versions/$android_version/download-ota?partial=1" | grep -oP "https://\S+${clean_device_name}\S+\.zip" | tail -1)
   else
-    # STABLE LOGIC
-    # If the device name does not contain "_beta", fetch the URL of the latest non-beta build
+    # LOGIC: Stable Release Channel
+    # Scrapes the official Google API/Developers page for the latest stable OTA package
     last_build_url=$(curl -b "devsite_wall_acks=nexus-ota-tos" -Ls 'https://developers.google.com/android/ota?partial=1' | grep -oP "\d+(\.\d+)+ \([^)]+\).*?https://\S+${clean_device_name}\S+zip" | sed -n 's/\\u003c\/td\\u003e\\n    \\u003ctd\\u003e\\u003ca href=\\"/ /p' | awk -F',' 'NF<=2' | tail -1 | grep -Eo "(https\S+)")
   fi
 
+  # Validate URL retrieval success
   if [[ -n $last_build_url ]]; then
-    # Print a message indicating that the download is starting
-    print_message "Downloading OTA build for ${clean_device_name^} ($mode) (\"$last_build_url\")…" debug
-
-    # Add the URL to the list.
+    print_message "Acquiring OTA payload for ${clean_device_name^} [Mode: $mode] via ($last_build_url)…" debug
     BUILD_URL_LIST+=("$last_build_url")
   else
-    print_message "Could not find URL for device: $input_device_name (Codenamed checked: $clean_device_name)" warning
+    print_message "Critical: Failed to resolve download URL for device: $input_device_name (Codename used: $clean_device_name)" warning
   fi
 done
 
-# Check if the URL list has at least one item
-[ ${#BUILD_URL_LIST[@]} -lt 1 ] && print_message "No download were found for the specified model or version." error
+# Verify that the build list contains valid targets before invoking the download engine
+[ ${#BUILD_URL_LIST[@]} -lt 1 ] && print_message "Error: No valid download targets resolved for the specified parameters." error
 
-# Download the build using aria2
+# Execute multi-threaded download sequence via aria2c
 aria2c -Z -m0 -x16 -s16 -j16 --file-allocation=none --enable-rpc=false --optimize-concurrent-downloads=true --disable-ipv6=true --allow-overwrite=true --remove-control-file=true --always-resume=true --download-result=full --summary-interval=0 -d ./dl "${BUILD_URL_LIST[@]}"
-print_message "Download complete" info
+
+print_message "OTA payload acquisition sequence completed successfully." info
