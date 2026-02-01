@@ -3,7 +3,7 @@ name: Build props (on schedule)
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 1 * *'
+    - cron: '37 13 7 * *' # At 13:37 on day-of-month 7. (UTC)
 
 jobs:
   prepare_build:
@@ -37,20 +37,8 @@ jobs:
       matrix:
         device_name: [tokay_beta3, caiman_beta3, komodo_beta3, comet_beta3, frankel_beta3, blazer_beta3, mustang_beta3, rango_beta3]
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - name: Free up disk space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 2048    # Keep 2GB for OS stability
-          swap-size-mb: 1024       # 1GB Swap is usually enough
-          remove-dotnet: 'true'    # Removes .NET (saves ~20GB)
-          remove-android: 'true'   # Removes Android SDK (saves ~12GB)
-          remove-haskell: 'true'   # Removes Haskell
-          remove-codeql: 'true'    # Removes CodeQL
-          remove-docker-images: 'true' # Removes Docker images
-      # ---------------------------------------------------------
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -58,7 +46,6 @@ jobs:
 
       - name: Install APT packages
         run: |
-          sudo apt update
           sudo apt install -y dos2unix
 
       - name: Activate venv
