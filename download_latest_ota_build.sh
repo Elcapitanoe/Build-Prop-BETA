@@ -22,14 +22,15 @@ BUILD_URL_LIST=()
 for input_device_name in "$@"; do
 
   # Determine the operation mode based on specific suffix requirements.
-  # Prioritize specific beta revisions (beta3, beta2) before falling back to standard processing.
-  if [[ $input_device_name == *"_beta3"* ]]; then
-      mode="beta3"
-      # Sanitize input to retrieve base device identifier
-      current_device_name=${input_device_name//_beta3/}
-  elif [[ $input_device_name == *"_beta2"* ]]; then
-      mode="beta2"
-      current_device_name=${input_device_name//_beta2/}
+  if [[ $input_device_name == *"_beta17"* ]]; then
+      mode="beta17"
+      current_device_name=${input_device_name//_beta17/}
+  elif [[ $input_device_name == *"_beta16q3"* ]]; then
+      mode="beta16q3"
+      current_device_name=${input_device_name//_beta16q3/}
+  elif [[ $input_device_name == *"_beta16q2"* ]]; then
+      mode="beta16q2"
+      current_device_name=${input_device_name//_beta16q2/}
   else
       mode="standard"
       current_device_name=$input_device_name
@@ -38,10 +39,9 @@ for input_device_name in "$@"; do
   # Extract Android version integer from the device identifier string
   android_version=$(echo "$current_device_name" | grep -oP '\K\d+')
 
-  # Validate Android version compatibility (Target range: 14-16).
-  # Conditional execution bypasses validation if version is undetectable or implicit in beta modes.
+  # Validate Android version compatibility (Target range: 14-17).
   if [[ -n $android_version ]]; then
-    [[ $android_version -ge 14 && $android_version -le 16 ]] || print_message "Warning: Detected Android version is outside the optimized range (14-16). Proceeding with extraction..." warning
+    [[ $android_version -ge 14 && $android_version -le 17 ]] || print_message "Warning: Detected Android version is outside the optimized range (14-17). Proceeding with extraction..." warning
   fi
 
   # Set default version to 15 if extraction yielded null
@@ -50,30 +50,23 @@ for input_device_name in "$@"; do
   # Sanitize the device identifier by stripping numeric characters to isolate the hardware codename
   clean_device_name=${current_device_name//[^[:alpha:]_]/}
 
-  # --- UPSTREAM SOURCE SELECTION LOGIC ---
+  # UPSTREAM SOURCE SELECTION LOGIC
   
-  if [[ $mode == "beta3" ]]; then
-    # LOGIC: Android 16 QPR3 Beta
-    # Targets the specific developer preview URL for QPR3
-    target_url="https://developer.android.com/about/versions/16/qpr3/download-ota"
-    
-    # Parse the upstream page for the ZIP file corresponding to the codename
+  if [[ $mode == "beta17" ]]; then
+    target_url="https://developer.android.com/about/versions/17/download-ota"
     last_build_url=$(curl -b "devsite_wall_acks=nexus-ota-tos" -Ls "$target_url?partial=1" | grep -oP "https://\S+${clean_device_name}\S+\.zip" | tail -1)
 
-  elif [[ $mode == "beta2" ]]; then
-    # LOGIC: Android 16 QPR2 Beta
-    # Targets the specific developer preview URL for QPR2
+  elif [[ $mode == "beta16q3" ]]; then
+    target_url="https://developer.android.com/about/versions/16/qpr3/download-ota"
+    last_build_url=$(curl -b "devsite_wall_acks=nexus-ota-tos" -Ls "$target_url?partial=1" | grep -oP "https://\S+${clean_device_name}\S+\.zip" | tail -1)
+
+  elif [[ $mode == "beta16q2" ]]; then
     target_url="https://developer.android.com/about/versions/16/qpr2/download-ota"
-    
     last_build_url=$(curl -b "devsite_wall_acks=nexus-ota-tos" -Ls "$target_url?partial=1" | grep -oP "https://\S+${clean_device_name}\S+\.zip" | tail -1)
 
   elif [[ $clean_device_name == *_beta* ]]; then
-    # LOGIC: Generic Beta Program
-    # Dynamic URL generation based on detected Android version
     last_build_url=$(curl -b "devsite_wall_acks=nexus-ota-tos" -Ls "https://developer.android.com/about/versions/$android_version/download-ota?partial=1" | grep -oP "https://\S+${clean_device_name}\S+\.zip" | tail -1)
   else
-    # LOGIC: Stable Release Channel
-    # Scrapes the official Google API/Developers page for the latest stable OTA package
     last_build_url=$(curl -b "devsite_wall_acks=nexus-ota-tos" -Ls 'https://developers.google.com/android/ota?partial=1' | grep -oP "\d+(\.\d+)+ \([^)]+\).*?https://\S+${clean_device_name}\S+zip" | sed -n 's/\\u003c\/td\\u003e\\n    \\u003ctd\\u003e\\u003ca href=\\"/ /p' | awk -F',' 'NF<=2' | tail -1 | grep -Eo "(https\S+)")
   fi
 
