@@ -1,84 +1,74 @@
 # Pixel Prop Builder: Streamlined OTA to Build.prop Conversion
 
-Effortlessly extract and manage system properties from Pixel OTA updates with this robust automation suite. Designed for developers and enthusiasts alike, it simplifies the process of accessing and customizing Android build properties.
+This automation suite efficiently extracts and manages system properties from Pixel OTA updates. Designed for developers and system administrators, it simplifies the process of accessing and customizing Android build properties.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- **Unix-like environment**: Linux or macOS with Bash.
-- **Core utilities**: Ensure you have the following installed:
-  - `dos2unix`, `aria2`, `zip`, `unzip`, `p7zip`, `curl`
-- **Python ^3.8**:
+* **Environment**: A Unix-like operating system running Linux or macOS with Bash.
+* **Core Utilities**: Ensure the installation of `dos2unix`, `aria2`, `zip`, `unzip`, `p7zip`, and `curl`.
+* **Python Runtime**: Python 3.8 or higher is required.
 
-    ```bash
-    sudo apt-get update -y
-    sudo apt-get install python3 python3-pip python3-venv -y
-    ```
+```bash
+sudo apt-get update -y
+sudo apt-get install python3 python3-pip python3-venv -y
+
+```
 
 ## Installation
 
-1. **Clone the repository** (including submodules):
+1. **Clone the repository**: Download the source code along with its submodules.
 
-   ```bash
-   git clone --recurse https://github.com/Pixel-Props/build.prop && cd build.prop
-   ```
+```bash
+git clone --recurse https://github.com/Elcapitanoe/Build-Prop-BETA && cd Build-Prop-BETA
 
-2. **Create and activate a virtual environment** (optional but recommended):
+```
 
-    ```bash
-    python3 -m venv .venv
-    . .venv/bin/activate
-    ```
+2. **Configure virtual environment**: It is recommended to isolate dependencies using a virtual environment.
 
-3. **Install dependencies**:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 
-    ```bash
-    python3 -m pip install payload_dumper --break-system-packages
-    ```
+```
+
+3. **Install dependencies**: Install the required Python packages.
+
+```bash
+python3 -m pip install payload_dumper --break-system-packages
+
+```
 
 ## Usage
 
-1. **Obtain Pixel Images**: Download the desired factory or OTA images from [Google Android Images](https://developers.google.com/android/images), [Beta OTA Pages](https://developer.android.com/about/versions/15/download-ota) or the [Beta OTA QPR2 Pages](https://developer.android.com/about/versions/16/qpr2/download-ota).
-2. **Stay Up-to-Date**:
-    - Fetch the latest OTA images with `./download_latest_ota_build.sh <device_name1> <device_name2> ...` (e.g., `husky`, `felix_beta`, `akita_beta15`, `akita_beta2`).
-3. **Effortless Extraction**:
-    - Place the downloaded image files within the project's workspace.
-    - Execute `./extract_images.sh` to automatically extract images and their build properties into `result/Codename_ID ...`.
-4. **Effortless Module Integration**:
-    - Execute `./build_module.sh` to automatically combine and build your module from the `result/` dir.
+1. **Obtain Firmware Images**: Identify the required factory or OTA images from the official Google Android Images repository, Android 15, Android 16, or Android 17 release channels.
+2. **Fetch Latest Builds**: Execute the download script using the specific device codenames and their target branch suffixes.
+* Example command: `./download_latest_ota_build.sh komodo komodo_beta15 komodo_beta16 komodo_beta17`
 
-## ✨ Key Features
+3. **Extract System Images**: Place the downloaded archive files within the project workspace. Run `./extract_images.sh` to automatically extract the images and parse their build properties into the `result/` directory.
+4. **Compile Magisk Module**: Run `./build_module.sh` to aggregate the extracted data and compile the final module from the generated results.
 
-- **Automated OTA Acquisition**: Downloads the latest builds directly from Google's official sources.
-- **Seamless Image Extraction**: Extracts system images from both factory images and OTA updates.
-- **Build Prop Generation**: Automatically generates `build.prop` files from extracted system images.
-- **Magisk Module Features**:
-  - **`service.sh`**:
-    - **Safe Mode**: Prevents accidental modification of critical system settings by comparing module properties with existing system values.
-    - **Integrated [Sensitive Props](https://github.com/Pixel-Props/sensitive-props) Mod Features**: Incorporates all [Sensitive Props](https://github.com/Pixel-Props/sensitive-props) Mod features and disables them if the standalone module is also present, avoiding conflicts.
-    - **PIHooks (PropImitationHooks)**: A powerful internal prop spoofing system that dynamically sets essential properties based on the properties of the **module defined in `MOD_PROP_CONTENT` that is being spoofed**.
-      - **Automatic PIHooks Disable**: PIHooks intelligently disables itself when it detects a properly configured Play Integrity Fix module.
-      - **Selective `build.prop` Integration**: PIHooks utilizes values from your device's actual `build.prop` only when setting specific properties, like the initial SDK version, when those values are considered safe and necessary.
-  - **`action.sh`**:
-    - **PlayIntegrityFix**: Automatically builds the `PIF.json` configuration when using a Beta OTA. Provides options to download pre-built configurations or crawl Google's OTA pages to generate a list of devices for building the configuration.
-    - **TrickyStore**: Automatically builds the target app package list and handles broken TEE status.
-- **GitHub Actions Integration**:
-  - **Scheduled Workflows**: Automate updates, builds, and releases on a schedule.
-  - **Duplicate Release Prevention**: Prevents redundant releases with intelligent checks.
-  - **Telegram Notifications**: Receive timely updates about build processes.
-- **Future Enhancements**:
-  - **[Pixel.Features](https://github.com/Pixel-Props/pixel.features/)**: Add support for building Pixel-specific features (currently includes `sysconfigs`).
+## Key Features
 
-## 📝 Responsible Usage Guidelines
+* **Automated Payload Acquisition**: Downloads the latest stable and beta builds directly from Google's official developer servers.
+* **Unified Image Extraction**: Processes and extracts system images from both full factory images and incremental OTA updates.
+* **Automated Prop Generation**: Parses extracted system components to systematically generate accurate `build.prop` files.
+* **Core Module System (service.sh)**: Implements a Safe Mode to prevent critical system configuration conflicts. It integrates Sensitive Props Mod features securely and utilizes PIHooks for dynamic, module-based property spoofing. PIHooks automatically deactivates if a properly configured Play Integrity Fix module is detected.
+* **Ancillary Module System (action.sh)**: Automates the compilation of `PIF.json` configurations specifically for Beta OTA builds. It also manages TrickyStore target application lists and handles broken TEE status automatically.
+* **Continuous Integration**: Leverages GitHub Actions for scheduled build pipelines, intelligent duplicate release prevention, and automated deployment notifications via Telegram.
+* **Extensibility**: Framework ready for future integrations, including the compilation of Pixel-specific features such as `sysconfigs`.
 
-This project is provided for educational and experimental purposes. While designed for efficiency, it's crucial to use this tool responsibly.
+## Responsible Usage Guidelines
 
-- **Code Review**: Thoroughly review and understand the code before deploying it in any environment.
-- **Security Best Practices**: Adhere to industry standards for security and legal compliance.
+This project is published strictly for educational and experimental purposes. Operators must utilize this tool responsibly.
 
-The creators of this project are not liable for any misuse or damages resulting from its use.
+* **Code Auditing**: Thoroughly review the codebase before executing scripts in any production or personal environment.
+* **Security Compliance**: Adhere to established industry standards regarding system security and device integrity.
 
-----------
+The maintainers of this repository assume no liability for system instability, data loss, or any damages resulting from the use of these tools.
 
-Ready to streamline your Android customization workflow? Dive in and unlock the power of automated build.prop extraction! Contributions are welcome to enhance the project's functionality and scope.
+## Credit & Support
+
+-   **Core Logic:** [@0x11DFE](https://github.com/0x11DFE)
+-   **Feedback:** Found a bug? Open a ticket on the [Issues Page](https://github.com/Elcapitanoe/Build-Prop-BETA/issues).
