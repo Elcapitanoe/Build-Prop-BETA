@@ -1,3 +1,6 @@
 [submodule "payload_dumper"]
 	path = payload_dumper
 	url = https://github.com/5ec1cff/payload-dumper
+[submodule "module_files/webroot"]
+	path = module_files/webroot
+	url = https://github.com/Elcapitanoe/PixelProp-Webroot
