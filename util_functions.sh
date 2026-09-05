@@ -52,7 +52,7 @@ process_directories() {
     done
 
     # Once done, exit to prevent duplicate executions
-    exit 1
+    exit 0
   }
 }
 
