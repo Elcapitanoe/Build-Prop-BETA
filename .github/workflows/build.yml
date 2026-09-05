@@ -87,6 +87,7 @@ jobs:
         id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_PRERELEASE: ${{ needs.prepare.outputs.is_prerelease }}
         run: |
           # The zip is created at repo root by build_module.sh, not in result/
           zip=$(find . -maxdepth 1 -name "*.zip" -type f -print -quit 2>/dev/null)
@@ -98,25 +99,30 @@ jobs:
           name=$(basename "$zip")
           echo "Built: $name"
 
-          # Paginate through ALL releases to build a complete asset list
-          EXISTING=$(mktemp)
-          trap 'rm -f "$EXISTING"' EXIT
+          # Bypass duplicate checking for test alpha pre-releases
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            echo "Alpha pre-release mode: bypassing duplicate check for testing."
+          else
+            # Paginate through ALL releases to build a complete asset list
+            EXISTING=$(mktemp)
+            trap 'rm -f "$EXISTING"' EXIT
 
-          page=1
-          while :; do
-            assets=$(gh api "repos/${{ github.repository }}/releases?per_page=100&page=${page}" \
-              --jq '.[] | .assets[].name' 2>/dev/null)
-            [ -z "$assets" ] && break
-            printf '%s\n' "$assets" >> "$EXISTING"
-            page=$((page + 1))
-          done
+            page=1
+            while :; do
+              assets=$(gh api "repos/${{ github.repository }}/releases?per_page=100&page=${page}" \
+                --jq '.[] | .assets[].name' 2>/dev/null)
+              [ -z "$assets" ] && break
+              printf '%s\n' "$assets" >> "$EXISTING"
+              page=$((page + 1))
+            done
 
-          # Skip if this exact zip was already released
-          if grep -qxF "$name" "$EXISTING" 2>/dev/null; then
-            echo "SKIP (already released): $name"
-            echo "has_new=false" >> "$GITHUB_OUTPUT"
-            rm -f "$zip"
-            exit 0
+            # Skip if this exact zip was already released
+            if grep -qxF "$name" "$EXISTING" 2>/dev/null; then
+              echo "SKIP (already released): $name"
+              echo "has_new=false" >> "$GITHUB_OUTPUT"
+              rm -f "$zip"
+              exit 0
+            fi
           fi
 
           # Extract metadata from the built module
