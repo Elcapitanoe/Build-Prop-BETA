@@ -41,7 +41,7 @@ jobs:
         id: set_devices
         run: |
           if [ "${{ github.event.inputs.devices }}" = "all" ] || [ -z "${{ github.event.inputs.devices }}" ]; then
-            JSON='["felix_beta17q2", "tangorpro_beta17q2", "shiba_beta17q2", "husky_beta17q2", "akita_beta17q2", "tokay_beta17q2", "caiman_beta17q2", "komodo_beta17q2", "comet_beta17q2", "tegu_beta17q2", "frankel_beta17q2", "blazer_beta17q2", "mustang_beta17q2", "rango_beta17q2", "stallion_beta17q2"]'
+            JSON='["felix_beta17q2", "tangorpro_beta17q2", "shiba_beta17q2", "husky_beta17q2", "akita_beta17q2", "tokay_beta17q2", "caiman_beta17q2", "komodo_beta17q2", "comet_beta17q2", "tegu_beta17q2", "frankel_beta17q2", "blazer_beta17q2", "mustang_beta17q2", "rango_beta17q2", "stallion_beta17q2", "cubs_beta17q2", "grizzly_beta17q2", "kodiak_beta17q2", "yogi_beta17q2"]'
           else
             JSON=$(echo '${{ github.event.inputs.devices }}' | tr ' ' '\n' | jq -R . | jq -s -c .)
           fi
