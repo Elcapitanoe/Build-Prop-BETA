@@ -288,6 +288,32 @@ jobs:
             echo "has_telegram=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Update CHANGELOG.md
+        if: steps.aggregate.outputs.has_new == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.aggregate.outputs.tag }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p target_repo
+          cd target_repo
+          git init
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git fetch origin main --depth=1
+          git checkout -b main origin/main
+          cd ..
+
+          python3 update_changelog.py
+
+          cd target_repo
+          git add CHANGELOG.md
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(changelog): update release history for ${TAG} [skip ci]"
+            git push origin main
+          fi
+
       - name: Notify Telegram
         if: steps.aggregate.outputs.has_new == 'true' && steps.aggregate.outputs.has_telegram == 'true'
         uses: appleboy/telegram-action@v1
