@@ -211,7 +211,6 @@ jobs:
           RELEASE_BODY="Automated build with $COUNT new module(s)."$'\n\n'
           while IFS= read -r device; do
             json="new_modules/metadata-${device}.json"
-            [ -f "$json" ] || json=$(find new_modules -maxdepth 1 -name "metadata-*.json" 2>/dev/null | head -1)
             [ -f "$json" ] || continue
 
             codename=$(jq -r '.codename' "$json")
