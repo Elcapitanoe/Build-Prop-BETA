@@ -24,8 +24,11 @@ python3 -m pip -V &>/dev/null || print_message "Could not find pip module in pyt
 payload_dumper -h &>/dev/null || print_message "Could not find payload_dumper executable. Install it using python3 -m pip install payload_dumper/" error
 
 # Install unpack_bootimg if not already installed
-while [ ! -f "./unpack_bootimg.py" ]; do
+if [ ! -f "./unpack_bootimg.py" ]; then
 	print_message "./unpack_bootimg.py not found. installing…" info
-	aria2c -q "https://android.googlesource.com/platform/system/tools/mkbootimg/+/refs/heads/master/unpack_bootimg.py?format=TEXT" -o unpack.b64 && base64 -d unpack.b64 > unpack_bootimg.py && rm unpack.b64
-    chmod +x unpack_bootimg.py
-done
+	aria2c -q "https://android.googlesource.com/platform/system/tools/mkbootimg/+/refs/heads/master/unpack_bootimg.py?format=TEXT" -o unpack.b64 \
+		&& base64 -d unpack.b64 > unpack_bootimg.py \
+		&& rm -f unpack.b64 \
+		&& chmod +x unpack_bootimg.py \
+		|| { print_message "Failed to download unpack_bootimg.py" error; exit 1; }
+fi
