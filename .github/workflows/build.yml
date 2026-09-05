@@ -17,6 +17,23 @@ on:
         required: true
         type: boolean
         default: false
+  workflow_call:
+    inputs:
+      devices:
+        description: 'Device codenames (space-separated, or "all")'
+        required: false
+        type: string
+        default: 'all'
+      prerelease:
+        description: 'Publish as Pre-Release (alpha tag)'
+        required: false
+        type: boolean
+        default: false
+      source_ref:
+        description: 'Branch, tag, or SHA of Build-Prop-BETA to check out'
+        required: false
+        type: string
+        default: 'main'
 
 jobs:
   # ------------------------------------------------------------------
@@ -31,7 +48,8 @@ jobs:
       - name: Determine environment
         id: set_env
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.prerelease }}" = "true" ]; then
+          PRERELEASE="${{ inputs.prerelease || github.event.inputs.prerelease }}"
+          if [ "$PRERELEASE" = "true" ]; then
             echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
@@ -40,10 +58,11 @@ jobs:
       - name: Determine device list
         id: set_devices
         run: |
-          if [ "${{ github.event.inputs.devices }}" = "all" ] || [ -z "${{ github.event.inputs.devices }}" ]; then
+          DEVICES="${{ inputs.devices || github.event.inputs.devices }}"
+          if [ "$DEVICES" = "all" ] || [ -z "$DEVICES" ]; then
             JSON='["felix_beta17q2", "tangorpro_beta17q2", "shiba_beta17q2", "husky_beta17q2", "akita_beta17q2", "tokay_beta17q2", "caiman_beta17q2", "komodo_beta17q2", "comet_beta17q2", "tegu_beta17q2", "frankel_beta17q2", "blazer_beta17q2", "mustang_beta17q2", "rango_beta17q2", "stallion_beta17q2", "cubs_beta17q2", "grizzly_beta17q2", "kodiak_beta17q2", "yogi_beta17q2"]'
           else
-            JSON=$(echo '${{ github.event.inputs.devices }}' | tr ' ' '\n' | jq -R . | jq -s -c .)
+            JSON=$(echo "$DEVICES" | tr ' ' '\n' | jq -R . | jq -s -c .)
           fi
           echo "devices=$JSON" >> "$GITHUB_OUTPUT"
 
@@ -60,6 +79,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: Elcapitanoe/Build-Prop-BETA
+          ref: ${{ inputs.source_ref || 'main' }}
           submodules: recursive
 
       - name: Make scripts executable
