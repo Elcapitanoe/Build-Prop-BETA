@@ -212,7 +212,7 @@ jobs:
 
           # Build per-device release notes in the order defined in prepare
           RELEASE_BODY="Automated build with $COUNT new module(s)."$'\n\n'
-          echo '${{ needs.prepare.outputs.devices }}' | jq -r '.[]' | while IFS= read -r device; do
+          while IFS= read -r device; do
             json="new_modules/metadata-${device}.json"
             [ -f "$json" ] || json=$(find new_modules -maxdepth 1 -name "metadata-*.json" 2>/dev/null | head -1)
             [ -f "$json" ] || continue
@@ -227,20 +227,20 @@ jobs:
             RELEASE_BODY+="- File name: \`${zip_name}\`"$'\n'
             [ -n "$build_desc" ] && RELEASE_BODY+="- Build Description: \`${build_desc}\`"$'\n'
             RELEASE_BODY+="- File hash (SHA256): \`${sha256}\`"$'\n\n'
-          done
+          done < <(echo '${{ needs.prepare.outputs.devices }}' | jq -r '.[]')
 
           printf '%s' "$RELEASE_BODY" > /tmp/release_notes.md
 
           # Build Telegram device list in the order defined in prepare
           DEVICE_LIST=""
-          echo '${{ needs.prepare.outputs.devices }}' | jq -r '.[]' | while IFS= read -r device; do
+          while IFS= read -r device; do
             json="new_modules/metadata-${device}.json"
             [ -f "$json" ] || continue
             zip_name=$(jq -r '.zip_name' "$json")
             device_name=$(jq -r '.device_name' "$json")
             download_url="${REPO_URL}/releases/download/${TAG}/${zip_name}"
             DEVICE_LIST+="- **${device_name}**: [${zip_name}](${download_url})"$'\n'
-          done
+          done < <(echo '${{ needs.prepare.outputs.devices }}' | jq -r '.[]')
 
           # Create release if it doesn't exist, otherwise upload to existing
           if gh release view "$TAG" &>/dev/null; then
