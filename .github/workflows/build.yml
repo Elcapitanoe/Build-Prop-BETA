@@ -125,20 +125,11 @@ jobs:
             fi
           fi
 
-          # Extract metadata from the built module
+          # Extract metadata directly from the built module zip
           codename=$(echo "$name" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
-          prop=$(find extracted_images -maxdepth 2 -name "module.prop" -path "*/${codename}-ota-*" 2>/dev/null | head -1)
-          prop_dir=$(dirname "$prop")
-          desc=""
-          device_name=""
-          build_desc=""
-          if [ -f "$prop" ]; then
-            desc=$(grep '^description=' "$prop" | cut -d= -f2- | head -1)
-            if [ -f "$prop_dir/system.prop" ]; then
-              device_name=$(grep -m1 '^ro.product.model=' "$prop_dir/system.prop" 2>/dev/null | cut -d= -f2- | head -1)
-              build_desc=$(grep -m1 '^ro.build.description=' "$prop_dir/system.prop" 2>/dev/null | cut -d= -f2- | head -1)
-            fi
-          fi
+          desc=$(unzip -p "$zip" module.prop 2>/dev/null | grep -m1 '^description=' | cut -d= -f2- | tr -d '\r')
+          device_name=$(unzip -p "$zip" system.prop 2>/dev/null | grep -m1 '^ro.product.model=' | cut -d= -f2- | tr -d '\r')
+          build_desc=$(unzip -p "$zip" system.prop 2>/dev/null | grep -m1 '^ro.build.description=' | cut -d= -f2- | tr -d '\r')
           [ -z "$device_name" ] && device_name="${codename^}"
 
           zip_hash=$(sha256sum "$zip" | awk '{print $1}')
