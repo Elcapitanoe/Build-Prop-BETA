@@ -19,6 +19,9 @@ on:
         default: false
 
 jobs:
+  # ------------------------------------------------------------------
+  # PREPARE: Determine which devices to build based on input or default list
+  # ------------------------------------------------------------------
   prepare:
     runs-on: ubuntu-latest
     outputs:
@@ -38,12 +41,15 @@ jobs:
         id: set_devices
         run: |
           if [ "${{ github.event.inputs.devices }}" = "all" ] || [ -z "${{ github.event.inputs.devices }}" ]; then
-            JSON='["marlin", "felix_beta17q2", "tangorpro_beta17q2", "shiba_beta17q2", "husky_beta17q2", "akita_beta17q2", "tokay_beta17q2", "caiman_beta17q2", "komodo_beta17q2", "comet_beta17q2", "tegu_beta17q2", "frankel_beta17q2", "blazer_beta17q2", "mustang_beta17q2", "rango_beta17q2", "stallion_beta17q2"]'
+            JSON='["felix_beta17q2", "tangorpro_beta17q2", "shiba_beta17q2", "husky_beta17q2", "akita_beta17q2", "tokay_beta17q2", "caiman_beta17q2", "komodo_beta17q2", "comet_beta17q2", "tegu_beta17q2", "frankel_beta17q2", "blazer_beta17q2", "mustang_beta17q2", "rango_beta17q2", "stallion_beta17q2"]'
           else
             JSON=$(echo '${{ github.event.inputs.devices }}' | tr ' ' '\n' | jq -R . | jq -s -c .)
           fi
           echo "devices=$JSON" >> "$GITHUB_OUTPUT"
 
+  # ------------------------------------------------------------------
+  # BUILD: Download OTA, extract props, build module, and check for duplicates
+  # ------------------------------------------------------------------
   build:
     needs: prepare
     runs-on: ubuntu-latest
@@ -76,6 +82,7 @@ jobs:
       - name: Extract and build
         run: bash extract_images.sh
 
+      # Check if this module version was already released to avoid duplicates
       - name: Check for duplicates
         id: check
         env:
@@ -91,15 +98,20 @@ jobs:
           name=$(basename "$zip")
           echo "Built: $name"
 
+          # Paginate through ALL releases to build a complete asset list
           EXISTING=$(mktemp)
           trap 'rm -f "$EXISTING"' EXIT
 
-          gh release list --limit 100 --json tagName --jq '.[].tagName' 2>/dev/null | \
-            while IFS= read -r tag; do
-              [ -n "$tag" ] || continue
-              gh release view "$tag" --json assets --jq '.assets[].name' 2>/dev/null >> "$EXISTING" || true
-            done
+          page=1
+          while :; do
+            assets=$(gh api "repos/${{ github.repository }}/releases?per_page=100&page=${page}" \
+              --jq '.[] | .assets[].name' 2>/dev/null)
+            [ -z "$assets" ] && break
+            printf '%s\n' "$assets" >> "$EXISTING"
+            page=$((page + 1))
+          done
 
+          # Skip if this exact zip was already released
           if grep -qxF "$name" "$EXISTING" 2>/dev/null; then
             echo "SKIP (already released): $name"
             echo "has_new=false" >> "$GITHUB_OUTPUT"
@@ -107,15 +119,19 @@ jobs:
             exit 0
           fi
 
-          # Extract metadata
+          # Extract metadata from the built module
           codename=$(echo "$name" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
           prop=$(find extracted_images -maxdepth 2 -name "module.prop" -path "*/${codename}-ota-*" 2>/dev/null | head -1)
           prop_dir=$(dirname "$prop")
           desc=""
           device_name=""
+          build_desc=""
           if [ -f "$prop" ]; then
             desc=$(grep '^description=' "$prop" | cut -d= -f2- | head -1)
-            device_name=$(grep -m1 '^ro.product.model=' "$prop_dir/system.prop" 2>/dev/null | cut -d= -f2- | head -1)
+            if [ -f "$prop_dir/system.prop" ]; then
+              device_name=$(grep -m1 '^ro.product.model=' "$prop_dir/system.prop" 2>/dev/null | cut -d= -f2- | head -1)
+              build_desc=$(grep -m1 '^ro.build.description=' "$prop_dir/system.prop" 2>/dev/null | cut -d= -f2- | head -1)
+            fi
           fi
           [ -z "$device_name" ] && device_name="${codename^}"
 
@@ -124,18 +140,23 @@ jobs:
           mkdir -p upload
           mv "$zip" upload/
 
-          # Save structured metadata for release/Telegram formatting
+          # Save structured metadata for the release aggregation step
           jq -n \
             --arg codename "$codename" \
             --arg zip_name "$name" \
             --arg sha256 "$zip_hash" \
             --arg device_name "$device_name" \
             --arg description "$desc" \
-            '{codename: $codename, zip_name: $zip_name, sha256: $sha256, device_name: $device_name, description: $description}' \
+            --arg build_desc "$build_desc" \
+            '{codename: $codename, zip_name: $zip_name, sha256: $sha256, device_name: $device_name, description: $description, build_desc: $build_desc}' \
             > "upload/metadata-${codename}.json"
+
+          # Mirror metadata by matrix device key for ordered lookup
+          cp "upload/metadata-${codename}.json" "upload/metadata-${{ matrix.device }}.json" 2>/dev/null || true
 
           echo "has_new=true" >> "$GITHUB_OUTPUT"
 
+      # Upload module + metadata artifact for the release job to collect
       - name: Upload artifact
         if: steps.check.outputs.has_new == 'true'
         uses: actions/upload-artifact@v4
@@ -144,6 +165,9 @@ jobs:
           path: upload/*
           retention-days: 1
 
+  # ------------------------------------------------------------------
+  # RELEASE: Aggregate all built modules, create GitHub release, notify Telegram
+  # ------------------------------------------------------------------
   release:
     needs: [prepare, build]
     runs-on: ubuntu-latest
@@ -157,12 +181,15 @@ jobs:
           path: new_modules/
         continue-on-error: true
 
+      # Collect all modules, generate release notes, publish release, and notify
       - name: Aggregate and publish
         id: aggregate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           IS_PRERELEASE: ${{ needs.prepare.outputs.is_prerelease }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: |
           mkdir -p new_modules
           COUNT=$(ls new_modules/*.zip 2>/dev/null | wc -l)
@@ -183,21 +210,31 @@ jobs:
 
           REPO_URL="https://github.com/${{ github.repository }}"
 
-          # Build release notes with code blocks + SHA256
+          # Build per-device release notes in the order defined in prepare
           RELEASE_BODY="Automated build with $COUNT new module(s)."$'\n\n'
-          for json in new_modules/metadata-*.json; do
+          echo '${{ needs.prepare.outputs.devices }}' | jq -r '.[]' | while IFS= read -r device; do
+            json="new_modules/metadata-${device}.json"
+            [ -f "$json" ] || json=$(find new_modules -maxdepth 1 -name "metadata-*.json" 2>/dev/null | head -1)
             [ -f "$json" ] || continue
+
+            codename=$(jq -r '.codename' "$json")
             zip_name=$(jq -r '.zip_name' "$json")
             sha256=$(jq -r '.sha256' "$json")
-            RELEASE_BODY+="\`$zip_name\`"$'\n'
-            RELEASE_BODY+="SHA256: \`$sha256\`"$'\n\n'
+            device_name=$(jq -r '.device_name' "$json")
+            build_desc=$(jq -r '.build_desc // empty' "$json")
+
+            RELEASE_BODY+="## ${device_name} (${codename^})"$'\n'
+            RELEASE_BODY+="- File name: \`${zip_name}\`"$'\n'
+            [ -n "$build_desc" ] && RELEASE_BODY+="- Build Description: \`${build_desc}\`"$'\n'
+            RELEASE_BODY+="- File hash (SHA256): \`${sha256}\`"$'\n\n'
           done
 
           printf '%s' "$RELEASE_BODY" > /tmp/release_notes.md
 
-          # Build Telegram device list with clickable download links
+          # Build Telegram device list in the order defined in prepare
           DEVICE_LIST=""
-          for json in new_modules/metadata-*.json; do
+          echo '${{ needs.prepare.outputs.devices }}' | jq -r '.[]' | while IFS= read -r device; do
+            json="new_modules/metadata-${device}.json"
             [ -f "$json" ] || continue
             zip_name=$(jq -r '.zip_name' "$json")
             device_name=$(jq -r '.device_name' "$json")
@@ -205,7 +242,7 @@ jobs:
             DEVICE_LIST+="- **${device_name}**: [${zip_name}](${download_url})"$'\n'
           done
 
-          # If release already exists, upload assets; else create it
+          # Create release if it doesn't exist, otherwise upload to existing
           if gh release view "$TAG" &>/dev/null; then
             echo "Release $TAG already exists, uploading assets..."
             gh release upload "$TAG" new_modules/*.zip --clobber
@@ -227,11 +264,15 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+          # Check Telegram credentials availability for safe step skipping
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+            echo "has_telegram=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_telegram=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Notify Telegram
-        if: steps.aggregate.outputs.has_new == 'true' && env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
-        env:
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        if: steps.aggregate.outputs.has_new == 'true' && steps.aggregate.outputs.has_telegram == 'true'
         uses: appleboy/telegram-action@v1
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
