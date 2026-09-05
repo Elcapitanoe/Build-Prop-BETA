@@ -11,6 +11,7 @@ unset IFS
 mkdir -p "dl"
 BUILD_URL_LIST=()
 declare -A HTML_CACHE
+LATEST_BETA_VER=""
 
 for input_device_name in "$@"; do
     if [[ "$input_device_name" =~ ^(.*)_beta([0-9]+)q([0-9]+)$ ]]; then
@@ -22,10 +23,13 @@ for input_device_name in "$@"; do
         clean_device_name="${BASH_REMATCH[1]//[^a-zA-Z_]/}"
         target_url="https://developer.android.com/about/versions/${BASH_REMATCH[2]}/download-ota"
     elif [[ "$input_device_name" == *"_beta"* ]]; then
-        mode="beta_legacy"
+        mode="beta_latest"
         clean_device_name="${input_device_name%%_beta*}"
         clean_device_name="${clean_device_name//[^a-zA-Z_]/}"
-        target_url="https://developer.android.com/about/versions/15/download-ota"
+        if [[ -z "${LATEST_BETA_VER:-}" ]]; then
+            LATEST_BETA_VER=$(curl -s -b "devsite_wall_acks=nexus-ota-tos" "https://developer.android.com/about/versions" | grep -oP 'href="/about/versions/[0-9]+' | grep -oP '[0-9]+' | sort -n | tail -1 || true)
+        fi
+        target_url="https://developer.android.com/about/versions/${LATEST_BETA_VER:-17}/download-ota"
     else
         mode="standard"
         clean_device_name="${input_device_name//[^a-zA-Z_]/}"
