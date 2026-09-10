@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from src.client import FetchResult, OTAClient
+from src.devices import extract_device_codenames, resolve_devices
 from src.main import probe_and_sync
 from src.parser import (
     extract_fingerprint,
@@ -422,3 +423,76 @@ def test_probe_new_major(tmp_path: Path) -> None:
         == "https://developer.android.com/about/versions/18/download-ota"
     )
     assert updated_state.fingerprint.build_id == "DP1A.270110.001"
+
+
+def test_extract_device_codenames() -> None:
+    devices = extract_device_codenames(SAMPLE_VALID_OTA_HTML)
+    assert devices == ["bluejay"]
+
+
+def test_resolve_devices_custom_input(tmp_path: Path) -> None:
+    state_file = tmp_path / "state.json"
+    state = TrackerState(
+        last_synced_at="2026-09-10T12:00:00Z",
+        active_target=ActiveTarget(
+            major=17,
+            qpr=2,
+            url="https://developer.android.com/about/versions/17/qpr2/download-ota",
+        ),
+        fingerprint=Fingerprint(
+            build_id="CP41.260814.003.A2",
+            security_patch="2026-08-05",
+            checksum_sha256="db418a461245d61e0e9472e0c732b2f706fddc9758eda62aca562608c577cb2e",
+        ),
+    )
+    save_state_atomic(state, state_file)
+
+    devices = resolve_devices(state_file, "shiba husky akita_beta17q2")
+    assert devices == ["shiba_beta17q2", "husky_beta17q2", "akita_beta17q2"]
+
+
+def test_resolve_devices_major_version(tmp_path: Path) -> None:
+    state_file = tmp_path / "state.json"
+    state = TrackerState(
+        last_synced_at="2026-09-10T12:00:00Z",
+        active_target=ActiveTarget(
+            major=18,
+            qpr=None,
+            url="https://developer.android.com/about/versions/18/download-ota",
+        ),
+        fingerprint=Fingerprint(
+            build_id="DP1A.270110.001",
+            security_patch="2027-02-05",
+            checksum_sha256="ffff00001111222233334444555566667777888899990000aaaabbbbccccdddd",
+        ),
+    )
+    save_state_atomic(state, state_file)
+
+    devices = resolve_devices(state_file, "shiba")
+    assert devices == ["shiba_beta18"]
+
+
+def test_resolve_devices_all_with_mock(monkeypatch, tmp_path: Path) -> None:
+    state_file = tmp_path / "state.json"
+    state = TrackerState(
+        last_synced_at="2026-09-10T12:00:00Z",
+        active_target=ActiveTarget(
+            major=17,
+            qpr=2,
+            url="https://developer.android.com/about/versions/17/qpr2/download-ota",
+        ),
+        fingerprint=Fingerprint(
+            build_id="CP41.260814.003.A2",
+            security_patch="2026-08-05",
+            checksum_sha256="db418a461245d61e0e9472e0c732b2f706fddc9758eda62aca562608c577cb2e",
+        ),
+    )
+    save_state_atomic(state, state_file)
+
+    monkeypatch.setattr(
+        "src.devices.fetch_remote_devices",
+        lambda url: ["shiba", "husky", "bluejay"],
+    )
+
+    devices = resolve_devices(state_file, "all")
+    assert devices == ["shiba_beta17q2", "husky_beta17q2", "bluejay_beta17q2"]
