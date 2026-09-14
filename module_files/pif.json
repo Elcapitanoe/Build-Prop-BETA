@@ -1,0 +1,21 @@
+{
+  "ID": "CD1A.260905.001.B1",
+  "BRAND": "google",
+  "DEVICE": "cubs",
+  "MANUFACTURER": "Google",
+  "MODEL": "Pixel 11",
+  "PRODUCT": "cubs",
+  "FINGERPRINT": "google/cubs/cubs:17/CD1A.260905.001.B1/16238327:user/release-keys",
+  "SECURITY_PATCH": "2026-09-01",
+  "DEVICE_INITIAL_SDK_INT": "37",
+  "TYPE": "user",
+  "TAG": "release-keys",
+  "RELEASE": "17",
+  "DEBUG": false,
+  "spoofBuild": "1",
+  "spoofProps": "0",
+  "spoofProvider": "0",
+  "spoofSignature": "0",
+  "spoofVendingSdk": "0",
+  "verboseLogs": "0"
+}

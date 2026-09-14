@@ -14,10 +14,6 @@ SYSPROP_FILES=$(find_prop_files "/" 2)
 MODPROP_CONTENT=$(echo "$MODPROP_FILES" | xargs cat)
 SYSPROP_CONTENT=$(echo "$SYSPROP_FILES" | xargs cat)
 
-# Store the content of all prop files in a variable
-MODPROP_CONTENT=$(echo "$MODPROP_FILES" | xargs cat)
-SYSPROP_CONTENT=$(echo "$SYSPROP_FILES" | xargs cat)
-
 # Function to build a JSON object from a list of properties.
 build_json() {
   echo '{'
@@ -70,7 +66,6 @@ PlayIntegrityFix() {
 
     # Set location of pif.json to of the current working directory
     CWD_PIF="$MODPATH"/pif.json
-    shift
 
     # Delete old CWD pif file
     [ -f "$CWD_PIF" ] && rm -f "$CWD_PIF"
@@ -248,7 +243,6 @@ TrickyStoreTarget() {
 
     # Set location of target.txt to of the current working directory
     CWD_TARGET="$MODPATH"/target.txt
-    shift
 
     # Delete old CWD target file
     [ -f "$CWD_TARGET" ] && rm -f "$CWD_TARGET"

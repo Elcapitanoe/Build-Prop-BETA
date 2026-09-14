@@ -326,6 +326,7 @@ sys_sensitive_pihooks_checks() {
     BUILD_TYPE=$(grep_prop "ro.product.build.type" "$MODPROP_CONTENT")
 
     update_ph_count=0
+    essential_props_set=0
     # Essential properties for integrity (PIF-less-PIF mode)
     essential_props="model manufacturer product fingerprint security_patch initial_sdk"
     # Calculate the total number of essential props dynamically

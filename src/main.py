@@ -16,7 +16,7 @@ from src.state import (
 )
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class TrackerResult:
     """Outcome of tracker probe run."""
 

@@ -7,6 +7,7 @@ def main():
         return
 
     entries = []
+    seen = set()
     for f in metadata_files:
         with open(f, "r", encoding="utf-8") as jf:
             d = json.load(jf)
@@ -16,15 +17,19 @@ def main():
         s256 = d.get("sha256", "")
         bdesc = d.get("build_desc", "")
 
+        if not zname or zname in seen:
+            continue
+        seen.add(zname)
+
         line = f"- **{dev} ({cname.capitalize()})**: `{zname}`\n  - SHA256: `{s256}`\n"
         if bdesc:
             line += f"  - Build: `{bdesc}`\n"
         entries.append(line)
 
-    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    today = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
     block = f"## [{today}]\n" + "".join(entries) + "\n"
 
-    changelog_path = "target_repo/CHANGELOG.md"
+    changelog_path = os.getenv("CHANGELOG_PATH", "CHANGELOG.md")
     if not os.path.exists(changelog_path):
         with open(changelog_path, "w", encoding="utf-8") as cf:
             cf.write(f"# Changelog\n\n{block}")

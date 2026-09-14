@@ -1,8 +1,5 @@
 name: Build and Release Pixel Props (BETA)
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 on:
   workflow_dispatch:
     inputs:
@@ -50,9 +47,10 @@ jobs:
 
       - name: Determine environment
         id: set_env
+        env:
+          PRERELEASE_INPUT: ${{ inputs.prerelease || github.event.inputs.prerelease }}
         run: |
-          PRERELEASE="${{ inputs.prerelease || github.event.inputs.prerelease }}"
-          if [ "$PRERELEASE" = "true" ]; then
+          if [ "$PRERELEASE_INPUT" = "true" ]; then
             echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
@@ -60,8 +58,9 @@ jobs:
 
       - name: Determine device list
         id: set_devices
+        env:
+          DEVICES_INPUT: ${{ inputs.devices || github.event.inputs.devices }}
         run: |
-          DEVICES_INPUT="${{ inputs.devices || github.event.inputs.devices }}"
           JSON=$(python3 -m src.devices --devices "$DEVICES_INPUT")
           echo "devices=$JSON" >> "$GITHUB_OUTPUT"
 
@@ -93,11 +92,13 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip3 install payload_dumper
+          pip3 install --break-system-packages ./payload_dumper
           which payload_dumper || echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Download OTA for ${{ matrix.device }}
-        run: bash download_latest_ota_build.sh ${{ matrix.device }}
+        env:
+          MATRIX_DEVICE: ${{ matrix.device }}
+        run: bash download_latest_ota_build.sh "$MATRIX_DEVICE"
 
       - name: Extract and build
         run: bash extract_images.sh
@@ -108,6 +109,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IS_PRERELEASE: ${{ needs.prepare.outputs.is_prerelease }}
+          MATRIX_DEVICE: ${{ matrix.device }}
         run: |
           # The zip is created at repo root by build_module.sh, not in result/
           zip=$(find . -maxdepth 1 -name "*.zip" -type f -print -quit 2>/dev/null)
@@ -169,7 +171,7 @@ jobs:
             > "upload/metadata-${codename}.json"
 
           # Mirror metadata by matrix device key for ordered lookup
-          cp "upload/metadata-${codename}.json" "upload/metadata-${{ matrix.device }}.json" 2>/dev/null || true
+          cp "upload/metadata-${codename}.json" "upload/metadata-${MATRIX_DEVICE}.json" 2>/dev/null || true
 
           echo "has_new=true" >> "$GITHUB_OUTPUT"
 
@@ -190,6 +192,13 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.source_ref || 'main' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -207,6 +216,7 @@ jobs:
           IS_PRERELEASE: ${{ needs.prepare.outputs.is_prerelease }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          DEVICES_JSON: ${{ needs.prepare.outputs.devices }}
         run: |
           mkdir -p new_modules
           COUNT=$(ls new_modules/*.zip 2>/dev/null | wc -l)
@@ -225,7 +235,7 @@ jobs:
             TITLE_LABEL="Pixel Props (Beta)"
           fi
 
-          REPO_URL="https://github.com/${{ github.repository }}"
+          REPO_URL="https://github.com/${GH_REPO}"
 
           # Build per-device release notes in the order defined in prepare
           RELEASE_BODY="Automated build with $COUNT new module(s)."$'\n\n'
@@ -243,7 +253,7 @@ jobs:
             RELEASE_BODY+="- File name: \`${zip_name}\`"$'\n'
             [ -n "$build_desc" ] && RELEASE_BODY+="- Build Description: \`${build_desc}\`"$'\n'
             RELEASE_BODY+="- File hash (SHA256): \`${sha256}\`"$'\n\n'
-          done < <(echo '${{ needs.prepare.outputs.devices }}' | jq -r '.[]')
+          done < <(echo "$DEVICES_JSON" | jq -r '.[]')
 
           printf '%s' "$RELEASE_BODY" > /tmp/release_notes.md
 
@@ -256,7 +266,7 @@ jobs:
             device_name=$(jq -r '.device_name' "$json")
             download_url="${REPO_URL}/releases/download/${TAG}/${zip_name}"
             DEVICE_LIST+="- **${device_name}**: [${zip_name}](${download_url})"$'\n'
-          done < <(echo '${{ needs.prepare.outputs.devices }}' | jq -r '.[]')
+          done < <(echo "$DEVICES_JSON" | jq -r '.[]')
 
           # Create release if it doesn't exist, otherwise upload to existing
           if gh release view "$TAG" &>/dev/null; then
@@ -290,27 +300,18 @@ jobs:
       - name: Update CHANGELOG.md
         if: steps.aggregate.outputs.has_new == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.aggregate.outputs.tag }}
+          TARGET_REF: ${{ inputs.source_ref || 'main' }}
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          mkdir -p target_repo
-          cd target_repo
-          git init
-          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
-          git fetch origin main --depth=1
-          git checkout -b main origin/main
-          cd ..
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           python3 update_changelog.py
 
-          cd target_repo
           git add CHANGELOG.md
           if ! git diff --cached --quiet; then
             git commit -m "docs(changelog): update release history for ${TAG} [skip ci]"
-            git push origin main
+            git push origin HEAD:"$TARGET_REF"
           fi
 
       - name: Notify Telegram

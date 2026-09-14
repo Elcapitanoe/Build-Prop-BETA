@@ -19,7 +19,7 @@ Automated toolchain to fetch, extract, and build Magisk/KernelSU/APatch modules 
 ### 2. Image Extraction (`extract_images.sh`, `util_functions.sh`)
 - Processes payload archives (`payload.bin` from OTA zip or raw factory zip).
 - Target partitions: `product`, `vendor`, `vendor_dlkm`, `system`, `system_ext`, `system_dlkm`, `init_boot`.
-- Single-partition streaming extraction via `payload_dumper` to prevent out-of-memory errors on large updates.
+- Partition extraction via `payload_dumper` (`5ec1cff/payload-dumper`) supporting concurrent multithreaded partition dumping.
 - Filesystem detection and unpacking:
   - **EROFS**: extracted via `fsck.erofs --extract`
   - **ext4**: extracted via `7z` (single-threaded mode)
@@ -87,8 +87,8 @@ Automated toolchain to fetch, extract, and build Magisk/KernelSU/APatch modules 
 ## Prerequisites
 
 - **Environment**: Linux (Debian, Ubuntu, Arch, Fedora, Alpine) or macOS
-- **System Binaries**: `bash`, `coreutils`, `p7zip`, `erofs-utils`, `lz4`, `cpio`, `dos2unix`, `aria2`, `curl`, `xxd`, `jq`
-- **Python**: Python 3.8+ with `payload_dumper`
+- **System Binaries**: `bash`, `coreutils`, `p7zip-full` (or `p7zip`), `erofs-utils`, `lz4`, `cpio`, `dos2unix`, `aria2`, `curl`, `xxd`, `jq`
+- **Python**: Python 3.9+ with `payload_dumper` (`5ec1cff/payload-dumper`)
 
 ### Dependency Installation
 
@@ -97,19 +97,19 @@ Debian / Ubuntu:
 sudo apt-get update
 sudo apt-get install -y p7zip-full e2fsprogs erofs-utils lz4 cpio \
   dos2unix aria2 curl xxd python3 python3-pip jq
-pip3 install payload_dumper
+pip3 install --break-system-packages ./payload_dumper
 ```
 
 Arch Linux:
 ```bash
 sudo pacman -S --needed p7zip erofs-utils lz4 cpio dos2unix aria2 curl xxd jq python python-pip
-pip install payload_dumper
+pip install ./payload_dumper
 ```
 
 Fedora:
 ```bash
 sudo dnf install -y p7zip p7zip-plugins erofs-utils lz4 cpio dos2unix aria2 curl python3 python3-pip jq
-pip3 install payload_dumper
+pip3 install ./payload_dumper
 ```
 
 ## Installation & Setup

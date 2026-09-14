@@ -10,7 +10,7 @@ declare PARTITIONS2EXTRACT=("product" "vendor" "vendor_dlkm" "system" "system_ex
 [[ $(type -t "print_message") != function ]] && . ./util_functions.sh
 
 # Install required packages and libs
-install_packages "zip" "p7zip" "erofs-utils" "lz4" "cpio" "dos2unix" "aria2"
+install_packages "zip" "p7zip-full" "erofs-utils" "lz4" "cpio" "dos2unix" "aria2"
 
 # Check whethever python was installed, TODO: Improve install_packages function.
 if ! command -v python3 >/dev/null 2>&1; then
@@ -21,7 +21,13 @@ fi
 python3 -m pip -V &>/dev/null || print_message "Could not find pip module in python3, To fix this issue simply aria2c and install https://bootstrap.pypa.io/get-pip.py from python3" error
 
 # Check if payload_dumper is available
-payload_dumper -h &>/dev/null || print_message "Could not find payload_dumper executable. Install it using python3 -m pip install payload_dumper/" error
+if ! command -v payload_dumper >/dev/null 2>&1; then
+	if [ -d "./payload_dumper" ]; then
+		print_message "Could not find payload_dumper executable in PATH. Install it from the submodule using: pip install ./payload_dumper" error
+	else
+		print_message "Could not find payload_dumper. Run 'git submodule update --init' and install via 'pip install ./payload_dumper'" error
+	fi
+fi
 
 # Install unpack_bootimg if not already installed
 if [ ! -f "./unpack_bootimg.py" ]; then

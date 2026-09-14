@@ -1,17 +1,23 @@
 #!/system/bin/sh
 
+MODDIR="${0%/*}"
 PIF_DIRS="/data/adb/modules/playintegrityfix/pif.json"
 
 if [ -d "/data/adb/modules/playintegrityfix" ]; then
-  # Loop true each PIF dirs
+  # Loop through each PIF dir
   for PIF_DIR in $PIF_DIRS; do
     # If has backup restore it
-    [ -f "${PIF_DIR}.old" ] && mv "${PIF_DIR}.old" "$PIF_DIR"
-
-    # If the pif.json is missing then we create one from maintained project
-    if [ ! -f "$PIF_DIR" ]; then
-      ui_print " -+ Missing $PIF_DIR, Downloading stable one for you."
-      wget -O -q --show-progress "$PIF_DIR" "https://raw.githubusercontent.com/chiteroman/PlayIntegrityFix/main/module/pif.json"
+    if [ -f "${PIF_DIR}.old" ]; then
+      mv "${PIF_DIR}.old" "$PIF_DIR"
+    elif [ ! -f "$PIF_DIR" ]; then
+      # Restore fallback config from bundled file or repository
+      ui_print " -+ Missing $PIF_DIR, restoring fallback config..."
+      if [ -f "$MODDIR/pif.json" ]; then
+        cp -f "$MODDIR/pif.json" "$PIF_DIR"
+      else
+        wget -q -O "$PIF_DIR" "https://raw.githubusercontent.com/Elcapitanoe/Build-Prop-BETA/main/module_files/pif.json" 2>/dev/null || \
+        wget -q -O "$PIF_DIR" "https://raw.githubusercontent.com/Elcapitanoe/Build-Prop-BETA/dev/module_files/pif.json"
+      fi
     fi
   done
 fi
