@@ -1,13 +1,12 @@
 """Device discovery module for Android Beta & QPR OTA releases."""
 
 import argparse
-import http.cookiejar
 import json
 import sys
-import urllib.error
-import urllib.request
 from html.parser import HTMLParser
 from pathlib import Path
+
+import httpx
 
 FALLBACK_BASE_DEVICES = [
     "bluejay",
@@ -67,44 +66,26 @@ def extract_device_codenames(html: str) -> list[str]:
 
 def fetch_remote_devices(url: str, timeout: float = 15.0) -> list[str]:
     """Fetch OTA page and return discovered device codenames."""
-    jar = http.cookiejar.CookieJar()
-    tos_cookie = http.cookiejar.Cookie(
-        version=0,
-        name="devsite_wall_acks",
-        value="nexus-ota-tos",
-        port=None,
-        port_specified=False,
-        domain=".developer.android.com",
-        domain_specified=True,
-        domain_initial_dot=True,
-        path="/",
-        path_specified=True,
-        secure=True,
-        expires=None,
-        discard=False,
-        comment=None,
-        comment_url=None,
-        rest={},
-        rfc2109=False,
-    )
-    jar.set_cookie(tos_cookie)
-    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
-            ),
-        },
-    )
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+        ),
+        "Cookie": "devsite_wall_acks=nexus-ota-tos",
+    }
     try:
-        with opener.open(req, timeout=timeout) as response:
-            html = response.read().decode("utf-8", errors="ignore")
+        with httpx.Client(
+            timeout=timeout,
+            follow_redirects=True,
+            headers=headers,
+        ) as client:
+            response = client.get(url)
+            response.raise_for_status()
+            html = response.text
         devices = extract_device_codenames(html)
         if devices:
             return devices
-    except (urllib.error.URLError, TimeoutError, OSError) as err:
+    except (httpx.HTTPError, OSError) as err:
         print(
             f"[Warn] Failed to scrape devices dynamically ({err}). Using fallback.",
             file=sys.stderr,

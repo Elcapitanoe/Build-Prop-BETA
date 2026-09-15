@@ -291,14 +291,46 @@ find_prop_files() {
   echo "${prop_files[@]}"
 }
 
-# Function to grep a property value from a list of files
-grep_prop() {
-  PROP="$1"
-  shift
-  FILES_or_VAR="$@"
+declare -gA _PROP_CACHE=()
 
-  # if it's a file, use grep normally
-  # else just echo the content from a variable.
+# Load properties into an associative array for O(1) in-memory lookups
+load_prop_cache() {
+  local content="$1"
+  _PROP_CACHE=()
+  local line key value
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    if [[ "$line" == *"="* ]]; then
+      key="${line%%=*}"
+      key="${key#"${key%%[![:space:]]*}"}"
+      key="${key%"${key##*[![:space:]]}"}"
+      if [[ -n "$key" && -z "${_PROP_CACHE[$key]+_}" ]]; then
+        value="${line#*=}"
+        _PROP_CACHE["$key"]="$value"
+      fi
+    fi
+  done <<< "$content"
+}
+
+# Function to grep a property value from a list of files or cached content
+grep_prop() {
+  local PROP="$1"
+  shift
+  local FILES_or_VAR="$*"
+
+  # In-memory fast path
+  if [[ -n "${_PROP_CACHE[$PROP]+_}" ]]; then
+    echo "${_PROP_CACHE[$PROP]}"
+    return 0
+  fi
+
+  # If cache is active and searching non-file string, key is absent
+  if [[ ${#_PROP_CACHE[@]} -gt 0 && -n "$FILES_or_VAR" && ! -f "$FILES_or_VAR" ]]; then
+    return 0
+  fi
+
+  # Fallback for direct file inspection or uninitialized cache
   if [[ -f "$FILES_or_VAR" ]]; then
     grep -m1 "^$PROP=" "$FILES_or_VAR" 2>/dev/null | cut -d= -f2- | head -n 1
   else
@@ -401,20 +433,47 @@ extract_erofs() {
   fi
 }
 
+declare -ga _TEMP_CLEANUP_PATHS=()
+
+_cleanup_temp_paths() {
+  local path
+  for path in "${_TEMP_CLEANUP_PATHS[@]}"; do
+    [ -e "$path" ] && rm -rf "$path"
+  done
+}
+
+_track_temp_path() {
+  _TEMP_CLEANUP_PATHS+=("$1")
+}
+
+_untrack_temp_path() {
+  local target="$1"
+  local updated=()
+  for p in "${_TEMP_CLEANUP_PATHS[@]}"; do
+    [[ "$p" != "$target" ]] && updated+=("$p")
+  done
+  _TEMP_CLEANUP_PATHS=("${updated[@]}")
+}
+
+trap _cleanup_temp_paths EXIT INT TERM
+
 extract_android_boot() {
   local img="$1"
   local dest="$2"
 
   local boot_out="$dest/.boot_tmp_$$"
   mkdir -p "$boot_out"
+  _track_temp_path "$boot_out"
 
   if ! python3 ./unpack_bootimg.py --boot_img "$img" --out "$boot_out" >/dev/null 2>&1; then
     rm -rf "$boot_out"
+    _untrack_temp_path "$boot_out"
     return 1
   fi
 
   if [ ! -f "$boot_out/ramdisk" ]; then
     rm -rf "$boot_out"
+    _untrack_temp_path "$boot_out"
     return 1
   fi
 
@@ -441,6 +500,7 @@ extract_android_boot() {
   done
 
   rm -rf "$boot_out"
+  _untrack_temp_path "$boot_out"
 }
 
 extract_image() {
@@ -471,11 +531,13 @@ extract_image() {
   if [ "$magic" = "3aff26ed" ] || file -b "$img_path" 2>/dev/null | grep -qi "sparse"; then
     if command -v simg2img >/dev/null 2>&1; then
       raw_img="$1/$2.raw"
+      _track_temp_path "$raw_img"
       print_message "Converting sparse image to raw…" debug
       if simg2img "$img_path" "$raw_img" 2>/dev/null; then
         work_img="$raw_img"
       else
         print_message "simg2img failed, working with image as-is…" warning
+        _untrack_temp_path "$raw_img"
         raw_img=""
       fi
     else
@@ -504,7 +566,10 @@ extract_image() {
   esac
 
   # Cleanup
-  [ -n "$raw_img" ] && rm -f "$raw_img"
+  if [ -n "$raw_img" ]; then
+    rm -f "$raw_img"
+    _untrack_temp_path "$raw_img"
+  fi
   rm -f "$img_path"
 }
 

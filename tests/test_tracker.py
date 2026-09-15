@@ -2,8 +2,15 @@
 
 from pathlib import Path
 
+import httpx
+
 from src.client import FetchResult, OTAClient
-from src.devices import extract_device_codenames, resolve_devices
+from src.devices import (
+    FALLBACK_BASE_DEVICES,
+    extract_device_codenames,
+    fetch_remote_devices,
+    resolve_devices,
+)
 from src.main import probe_and_sync
 from src.parser import (
     extract_fingerprint,
@@ -496,3 +503,32 @@ def test_resolve_devices_all_with_mock(monkeypatch, tmp_path: Path) -> None:
 
     devices = resolve_devices(state_file, "all")
     assert devices == ["shiba_beta17q2", "husky_beta17q2", "bluejay_beta17q2"]
+
+
+def test_fetch_remote_devices_success(monkeypatch) -> None:
+    html = """
+    <table id="images">
+      <tr id="shiba"><td>Pixel 8</td></tr>
+      <tr id="husky"><td>Pixel 8 Pro</td></tr>
+    </table>
+    """
+
+    class MockResponse:
+        text = html
+
+        def raise_for_status(self) -> None:
+            pass
+
+    monkeypatch.setattr("httpx.Client.get", lambda self, url: MockResponse())
+    devices = fetch_remote_devices("https://developer.android.com/test")
+    assert devices == ["shiba", "husky"]
+
+
+def test_fetch_remote_devices_error_fallback(monkeypatch) -> None:
+    def mock_get(self, url):
+        raise httpx.ConnectError("Connection failed")
+
+    monkeypatch.setattr("httpx.Client.get", mock_get)
+    devices = fetch_remote_devices("https://developer.android.com/test")
+    assert devices == FALLBACK_BASE_DEVICES
+

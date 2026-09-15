@@ -6,7 +6,7 @@ from typing import Self
 import httpx
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class FetchResult:
     """Result of an HTTP fetch request."""
 

@@ -12,6 +12,16 @@ EAI="./extracted_archive_images"
 EI_BP="${EI##"./"}"
 EAI_BP="${EAI##"./"}"
 
+# Determine payload_dumper invocation (PATH binary or direct submodule execution)
+if command -v payload_dumper >/dev/null 2>&1; then
+	PAYLOAD_DUMPER_CMD="payload_dumper"
+elif [ -d "payload_dumper/src" ]; then
+	PAYLOAD_DUMPER_CMD="python3 -m payload_dumper"
+	export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$(pwd)/payload_dumper/src"
+else
+	PAYLOAD_DUMPER_CMD="payload_dumper"
+fi
+
 # Extract payload as ota or system image if factory
 [ -d "dl" ] && print_message "Extracting images from the Android OTA update package or factory image…\n" info
 for file in ./dl/*; do                                      # Iterate through files in the directory ./dl/*
@@ -74,16 +84,21 @@ if [ -d "$EAI_BP" ]; then
 
 			    # Extract/Dump
 				if [ "${file: -4}" == ".bin" ]; then # If is payload use the Android OTA Dumper
-					# Dump one partition at a time to keep memory usage low
-					for image_name in "${PARTITIONS2EXTRACT[@]}"; do
-						print_message "Dumping \"$image_name\" from payload…" debug
+					partitions_csv=$(IFS=,; echo "${PARTITIONS2EXTRACT[*]}")
+					print_message "Dumping partitions ($partitions_csv) from payload…" debug
 
-						if ! payload_dumper "$file" --partitions="$image_name" --out="$EI_BP/$basename" 2>/dev/null; then
-							print_message "Failed to extract $image_name from $file using Android OTA Dumper. Skipping…" warning
-							rm -f "$EI_BP/$basename/$image_name.img"
-							continue
-						fi
-					done
+					if ! $PAYLOAD_DUMPER_CMD "$file" --partitions="$partitions_csv" --out="$EI_BP/$basename" 2>/dev/null; then
+						print_message "Batch dump failed, falling back to sequential extraction…" warning
+						for image_name in "${PARTITIONS2EXTRACT[@]}"; do
+							print_message "Dumping \"$image_name\" from payload…" debug
+
+							if ! $PAYLOAD_DUMPER_CMD "$file" --partitions="$image_name" --out="$EI_BP/$basename" 2>/dev/null; then
+								print_message "Failed to extract $image_name from $file using Android OTA Dumper. Skipping…" warning
+								rm -f "$EI_BP/$basename/$image_name.img"
+								continue
+							fi
+						done
+					fi
 				else # Else directly extract all the required image using 7z
 					for image_name in "${PARTITIONS2EXTRACT[@]}"; do
 						print_message "Extracting \"$image_name\"…" debug

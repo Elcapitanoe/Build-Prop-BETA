@@ -9,8 +9,12 @@ process_directories "${BASH_SOURCE[0]}" "$1"
 # Define the props path
 declare EXT_PROP_FILES=$(find_prop_files "$dir")
 
-# Store the content of all prop files in a variable
-declare EXT_PROP_CONTENT=$(cat $EXT_PROP_FILES)
+# Store the content of all prop files safely and initialize prop cache
+declare EXT_PROP_CONTENT=""
+if [ -n "$EXT_PROP_FILES" ]; then
+  EXT_PROP_CONTENT=$(echo "$EXT_PROP_FILES" | xargs -r cat)
+fi
+load_prop_cache "$EXT_PROP_CONTENT"
 
 # Building props config from there
 system_prop=""
