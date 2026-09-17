@@ -6,7 +6,10 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
-import httpx
+try:
+    import httpx
+except ImportError:
+    httpx = None
 
 FALLBACK_BASE_DEVICES = [
     "bluejay",
@@ -66,6 +69,13 @@ def extract_device_codenames(html: str) -> list[str]:
 
 def fetch_remote_devices(url: str, timeout: float = 15.0) -> list[str]:
     """Fetch OTA page and return discovered device codenames."""
+    if httpx is None:
+        print(
+            "[Warn] 'httpx' is not installed. Using fallback device list.",
+            file=sys.stderr,
+        )
+        return FALLBACK_BASE_DEVICES
+
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
