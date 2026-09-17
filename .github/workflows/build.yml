@@ -30,10 +30,10 @@ on:
         type: string
         default: 'main'
 
+permissions:
+  contents: write
+
 jobs:
-  # ------------------------------------------------------------------
-  # PREPARE: Determine which devices to build based on input or default list
-  # ------------------------------------------------------------------
   prepare:
     runs-on: ubuntu-latest
     outputs:
@@ -75,9 +75,6 @@ jobs:
           JSON=$(python3 -m src.devices --devices "$DEVICES_INPUT")
           echo "devices=$JSON" >> "$GITHUB_OUTPUT"
 
-  # ------------------------------------------------------------------
-  # BUILD: Download OTA, extract props, build module, and check for duplicates
-  # ------------------------------------------------------------------
   build:
     needs: prepare
     runs-on: ubuntu-latest
@@ -114,7 +111,6 @@ jobs:
       - name: Extract and build
         run: bash extract_images.sh
 
-      # Check if this module version was already released to avoid duplicates
       - name: Check for duplicates
         id: check
         env:
@@ -122,7 +118,6 @@ jobs:
           IS_PRERELEASE: ${{ needs.prepare.outputs.is_prerelease }}
           MATRIX_DEVICE: ${{ matrix.device }}
         run: |
-          # The zip is created at repo root by build_module.sh, not in result/
           zip=$(find . -maxdepth 1 -name "*.zip" -type f -print -quit 2>/dev/null)
           if [ -z "$zip" ]; then
             echo "has_new=false" >> "$GITHUB_OUTPUT"
@@ -132,11 +127,9 @@ jobs:
           name=$(basename "$zip")
           echo "Built: $name"
 
-          # Bypass duplicate checking for test alpha pre-releases
           if [ "$IS_PRERELEASE" = "true" ]; then
             echo "Alpha pre-release mode: bypassing duplicate check for testing."
           else
-            # Paginate through ALL releases to build a complete asset list
             EXISTING=$(mktemp)
             trap 'rm -f "$EXISTING"' EXIT
 
@@ -149,7 +142,6 @@ jobs:
               page=$((page + 1))
             done
 
-            # Skip if this exact zip was already released
             if grep -qxF "$name" "$EXISTING" 2>/dev/null; then
               echo "SKIP (already released): $name"
               echo "has_new=false" >> "$GITHUB_OUTPUT"
@@ -158,7 +150,6 @@ jobs:
             fi
           fi
 
-          # Extract metadata directly from the built module zip
           codename=$(echo "$name" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
           desc=$(unzip -p "$zip" module.prop 2>/dev/null | grep -m1 '^description=' | cut -d= -f2- | tr -d '\r')
           device_name=$(unzip -p "$zip" system.prop 2>/dev/null | grep -m1 '^ro.product.model=' | cut -d= -f2- | tr -d '\r')
@@ -170,7 +161,6 @@ jobs:
           mkdir -p upload
           mv "$zip" upload/
 
-          # Save structured metadata for the release aggregation step
           jq -n \
             --arg codename "$codename" \
             --arg zip_name "$name" \
@@ -181,12 +171,10 @@ jobs:
             '{codename: $codename, zip_name: $zip_name, sha256: $sha256, device_name: $device_name, description: $description, build_desc: $build_desc}' \
             > "upload/metadata-${codename}.json"
 
-          # Mirror metadata by matrix device key for ordered lookup
           cp "upload/metadata-${codename}.json" "upload/metadata-${MATRIX_DEVICE}.json" 2>/dev/null || true
 
           echo "has_new=true" >> "$GITHUB_OUTPUT"
 
-      # Upload module + metadata artifact for the release job to collect
       - name: Upload artifact
         if: steps.check.outputs.has_new == 'true'
         uses: actions/upload-artifact@v4
@@ -195,13 +183,10 @@ jobs:
           path: upload/*
           retention-days: 1
 
-  # ------------------------------------------------------------------
-  # RELEASE: Aggregate all built modules, create GitHub release, notify Telegram
-  # ------------------------------------------------------------------
   release:
     needs: [prepare, build]
     runs-on: ubuntu-latest
-    if: !cancelled() && needs.prepare.result == 'success'
+    if: ${{ !cancelled() && needs.prepare.result == 'success' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -218,7 +203,6 @@ jobs:
           path: new_modules/
         continue-on-error: true
 
-      # Collect all modules, generate release notes, publish release, and notify
       - name: Aggregate and publish
         id: aggregate
         env:
@@ -248,7 +232,6 @@ jobs:
 
           REPO_URL="https://github.com/${GH_REPO}"
 
-          # Build per-device release notes in the order defined in prepare
           RELEASE_BODY="Automated build with $COUNT new module(s)."$'\n\n'
           while IFS= read -r device; do
             json="new_modules/metadata-${device}.json"
@@ -268,7 +251,6 @@ jobs:
 
           printf '%s' "$RELEASE_BODY" > /tmp/release_notes.md
 
-          # Build Telegram device list in the order defined in prepare
           DEVICE_LIST=""
           while IFS= read -r device; do
             json="new_modules/metadata-${device}.json"
@@ -279,7 +261,6 @@ jobs:
             DEVICE_LIST+="- **${device_name}**: [${zip_name}](${download_url})"$'\n'
           done < <(echo "$DEVICES_JSON" | jq -r '.[]')
 
-          # Create release if it doesn't exist, otherwise upload to existing
           if gh release view "$TAG" &>/dev/null; then
             echo "Release $TAG already exists, uploading assets..."
             gh release upload "$TAG" new_modules/*.zip --clobber
@@ -301,7 +282,6 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-          # Check Telegram credentials availability for safe step skipping
           if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
             echo "has_telegram=true" >> "$GITHUB_OUTPUT"
           else
@@ -326,7 +306,7 @@ jobs:
           fi
 
       - name: Notify Telegram
-        if: steps.aggregate.outputs.has_new == 'true' && steps.aggregate.outputs.has_telegram == 'true'
+        if: ${{ steps.aggregate.outputs.has_new == 'true' && steps.aggregate.outputs.has_telegram == 'true' }}
         uses: appleboy/telegram-action@v1
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
