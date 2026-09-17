@@ -54,3 +54,4 @@ jobs:
     with:
       devices: 'all'
       prerelease: false
+    secrets: inherit
