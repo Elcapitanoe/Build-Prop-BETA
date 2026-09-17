@@ -7,8 +7,8 @@
     "url": "https://developer.android.com/about/versions/17/qpr2/download-ota"
   },
   "fingerprint": {
-    "build_id": "CP41.260828.004.A8",
-    "security_patch": "2026-08-05",
-    "checksum_sha256": "1e9af77917133294d3bbe758f2c6654e7c590cd8e42e0189d2795bcc41fb38a7"
+    "build_id": "CP41.260728.004.A8",
+    "security_patch": "2026-07-05",
+    "checksum_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
   }
 }
