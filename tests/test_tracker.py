@@ -532,3 +532,9 @@ def test_fetch_remote_devices_error_fallback(monkeypatch) -> None:
     devices = fetch_remote_devices("https://developer.android.com/test")
     assert devices == FALLBACK_BASE_DEVICES
 
+
+def test_fetch_remote_devices_missing_httpx(monkeypatch) -> None:
+    monkeypatch.setattr("src.devices.httpx", None)
+    devices = fetch_remote_devices("https://developer.android.com/test")
+    assert devices == FALLBACK_BASE_DEVICES
+
