@@ -71,7 +71,7 @@ PlayIntegrityFix() {
     [ -f "$CWD_PIF" ] && rm -f "$CWD_PIF"
 
     update_count=0
-    case "$PRODUCT" in
+    case "$PRODUCT $FINGERPRINT" in
     *beta*)
       ui_print "  - Building PlayIntegrityFix PIF.json from current (BETA) module properties…"
 
@@ -80,16 +80,15 @@ PlayIntegrityFix() {
       ;;
     *)
       ui_print "  - Non BETA module detected"
-      ui_print "  - Download the PIF.json from GitHub? (chiteroman/PlayIntegrityFix)"
+      ui_print "  - Download the PIF.json from GitHub? (Build-Prop-BETA)"
 
-      # Ask whether to download PIF.json from chiteroman's GitHub or build one yourself
+      # Ask whether to download PIF.json from GitHub or build one yourself
       volume_key_event_setval "DOWNLOAD_PIF_GITHUB" true false "ACTION_DOWNLOAD_PIF_GITHUB"
 
-      # TODO: Not sure if i should add support for config.prop here (in case no HW keys present) ?
-
-      # Either download the PIF.json from chiteroman's GitHub or build one yourself
+      # Either download the PIF.json from GitHub or crawl OTA releases
       if boolval "$ACTION_DOWNLOAD_PIF_GITHUB"; then
-        download_file "https://raw.githubusercontent.com/chiteroman/PlayIntegrityFix/main/module/pif.json" "$CWD_PIF"
+        download_file "https://raw.githubusercontent.com/Elcapitanoe/Build-Prop-BETA/main/module_files/pif.json" "$CWD_PIF" || \
+        download_file "https://raw.githubusercontent.com/Elcapitanoe/Build-Prop-BETA/dev/module_files/pif.json" "$CWD_PIF"
       else
         ui_print " - Crawling the latest Google Pixel Beta OTA Releases…"
 
@@ -97,13 +96,10 @@ PlayIntegrityFix() {
         download_file https://developer.android.com/topic/generic-system-image/releases DL_GSI_HTML
 
         # Extract release date from the text closest to the "(Beta)" string and convert to YYYY-MM-DD format
-        RELEASE_DATE="$(date -D '%B %e, %Y' -d "$(grep -m1 -o 'Date:.*' DL_GSI_HTML | cut -d\  -f2-4)" '+%Y-%m-%d' | head -n1)"
-
-        # Extract the release version from the link closest to the "(Beta)" string
-        RELEASE_VERSION="$(awk '/\(Beta\)/ {flag=1} /versions/ && flag {print; flag=0}' DL_GSI_HTML | sed -n 's/.*\/versions\/\([0-9]*\).*/\1/p' | head -n1)"
+        RELEASE_DATE="$(date -D "%B %e, %Y" -d "$(grep -m1 -o "Date:.*" DL_GSI_HTML | cut -d\  -f2-4)" "+%Y-%m-%d" 2>/dev/null | head -n1)"
 
         # Extract the build ID from the text closest to the "(Beta)" string
-        RELEASE_IDS="$(awk '/\(Beta\)/ {flag=1} /Build:/ && flag {print; flag=0}' DL_GSI_HTML | sed -n 's/.*Build: \([A-Z0-9.]*\).*/\1/p')"
+        RELEASE_IDS="$(awk "/\(Beta\)/ {flag=1} /Build:/ && flag {print; flag=0}" DL_GSI_HTML | sed -n "s/.*Build: \([A-Z0-9.]*\).*/\1/p")"
 
         # Print the header with the release date
         ui_print "  - Latest Available Beta Releases ($RELEASE_DATE)"
@@ -114,10 +110,10 @@ PlayIntegrityFix() {
         # Loop through each unique ID
         for ID in $RELEASE_IDS; do
           # Find the corresponding release version for the current ID
-          RELEASE_VERSION=$(awk -v id="$ID" '$0 ~ id {flag=1} /Android [0-9]+/ && flag {print; flag=0}' DL_GSI_HTML | sed -n 's/.*Android \([0-9]*\).*/\1/p' | head -n1)
+          RELEASE_VERSION=$(awk -v id="$ID" '$0 ~ id {flag=1} /Android [0-9]+/ && flag {print; flag=0}' DL_GSI_HTML | sed -n "s/.*Android \([0-9]*\).*/\1/p" | head -n1)
 
           # Extract the incremental value (based on the ID)
-          INCREMENTAL=$(grep -o "$ID-[0-9]*-" DL_GSI_HTML | sed "s/$ID-//g" | sed 's/-//g' | head -n1)
+          INCREMENTAL=$(grep -o "$ID-[0-9]*-" DL_GSI_HTML | sed "s/$ID-//g" | sed "s/-//g" | head -n1)
 
           # Build the release info for user selection
           RELEASE_INFO="A$RELEASE_VERSION-$ID-$INCREMENTAL"
@@ -139,11 +135,27 @@ PlayIntegrityFix() {
         SELECTED_RELEASE_VERSION=$(echo "$SELECTED_RELEASE" | cut -d- -f1 | tr -d 'A')
         SELECTED_RELEASE_INCREMENTAL=$(echo "$SELECTED_RELEASE" | cut -d- -f3)
 
+        # Resolve OTA path (handles base or QPR releases like /about/versions/17/qpr2)
+        OTA_REL_PATH=$(awk -v id="$SELECTED_RELEASE_ID" '
+          /\/about\/versions\/[0-9a-zA-Z_\/-]+/ {
+            if (match($0, /\/about\/versions\/[0-9a-zA-Z_\/-]+/)) {
+              last_url = substr($0, RSTART, RLENGTH)
+            }
+          }
+          $0 ~ id { print last_url; exit }
+        ' DL_GSI_HTML | sed -e "s|/get$||" -e "s|/download-ota$||")
+
+        if [ -n "$OTA_REL_PATH" ]; then
+          OTA_URL="https://developer.android.com${OTA_REL_PATH}/download-ota"
+        else
+          OTA_URL="https://developer.android.com/about/versions/$SELECTED_RELEASE_VERSION/download-ota"
+        fi
+
         # Download the OTA Image Download page
-        download_file "https://developer.android.com/about/versions/$SELECTED_RELEASE_VERSION/download-ota" DL_OTA_HTML
+        download_file "$OTA_URL" DL_OTA_HTML
 
         # Build lists of supported models and codenames from the OTA Image Download page
-        DEVICE_LIST="$(grep -A1 'tr id=' DL_OTA_HTML | awk -F '[<>"]' '
+        DEVICE_LIST="$(grep -A1 "tr id=" DL_OTA_HTML 2>/dev/null | awk -F '[<>"]' '
             /tr id=/ { id = $3 }
             /<td>/ {
                 devices = devices ? devices sprintf(",%s (%s)", $3, id) : sprintf("%s (%s)", $3, id)
@@ -151,12 +163,18 @@ PlayIntegrityFix() {
             END { print devices }
         ')"
 
-        CODENAME_LIST="$(grep -A1 'tr id=' DL_OTA_HTML | awk -F '[<>"]' '
+        CODENAME_LIST="$(grep -A1 "tr id=" DL_OTA_HTML 2>/dev/null | awk -F '[<>"]' '
           /tr id=/ {
               codenames = codenames ? codenames "," $3 : $3
           }
           END { print codenames }
-      ')"
+        ')"
+
+        # Fallback device catalog if page parsing yielded no results
+        if [ -z "$DEVICE_LIST" ]; then
+          DEVICE_LIST="Pixel 11 Pro Fold (yogi),Pixel 11 Pro XL (kodiak),Pixel 11 Pro (grizzly),Pixel 11 (cubs),Pixel 10a (stallion),Pixel 10 Pro Fold (rango),Pixel 10 Pro XL (mustang),Pixel 10 Pro (blazer),Pixel 10 (frankel),Pixel 9a (tegu),Pixel 9 Pro Fold (comet),Pixel 9 Pro XL (komodo),Pixel 9 Pro (caiman),Pixel 9 (tokay),Pixel 8a (akita),Pixel 8 Pro (husky),Pixel 8 (shiba),Pixel Tablet (tangorpro),Pixel Fold (felix),Pixel 7a (lynx),Pixel 7 Pro (cheetah),Pixel 7 (panther),Pixel 6a (bluejay)"
+          CODENAME_LIST="yogi,kodiak,grizzly,cubs,stallion,rango,mustang,blazer,frankel,tegu,comet,komodo,caiman,tokay,akita,husky,shiba,tangorpro,felix,lynx,cheetah,panther,bluejay"
+        fi
 
         # Show a list of device with proper format
         ui_print "  - Devices Available:"
@@ -170,11 +188,12 @@ PlayIntegrityFix() {
         # Get the device MODEL name from the selected CODENAME using DEVICE_LIST
         SELECTED_MODEL=$(echo "$DEVICE_LIST" | tr ',' '\n' | awk -F'[(,]' -v c="$SELECTED_CODENAME" '$0~c{print $1}')
 
-        # Build security patch from OTA release date
+        # Build security patch from OTA release date with monthly fallback
         SECURITY_PATCH_DATE="${RELEASE_DATE%-*}"-05
+        [ -z "$SECURITY_PATCH_DATE" ] || [ "$SECURITY_PATCH_DATE" = "-05" ] && SECURITY_PATCH_DATE="$(date '+%Y-%m')-05"
 
-        # An attempt at fixing Baklava
-        SELECTED_RELEASE_VERSION_OR_CODENAME=$([ "$SELECTED_RELEASE_VERSION" -gt 15 ] && echo "Baklava" || echo "$SELECTED_RELEASE_VERSION")
+        # Match release version for fingerprint
+        SELECTED_RELEASE_VERSION_OR_CODENAME="$SELECTED_RELEASE_VERSION"
 
         # List of properties to include in the PIF.json file
         PIF_LIST="MODEL MANUFACTURER FINGERPRINT SECURITY_PATCH DEVICE_INITIAL_SDK_INT"
