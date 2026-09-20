@@ -2,6 +2,11 @@
  
 All notable changes and build releases are documented here.
  
+## [2026-09-20]
+- **Pixel 11 (Cubs)**: `Cubs_beta_CP41.260828.004.A8.zip`
+  - SHA256: `e46b1ee4c40d604dbb19e9eaaa747fc794417219c248ca1f4dbb6f87aee48171`
+  - Build: `cubs_beta-user 17 CP41.260828.004.A8 16319058 release-keys`
+
 ## [2026-09-17]
 - **Pixel 8a (Akita)**: `Akita_beta_CP41.260828.004.A8.zip`
   - SHA256: `0ae3e53a6b37db2f90ab1b558be32dae98352b7f0422e9ae33bc187f78bff205`
