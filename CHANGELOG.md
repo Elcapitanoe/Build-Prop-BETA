@@ -2,6 +2,65 @@
  
 All notable changes and build releases are documented here.
  
+## [2026-09-24]
+- **Pixel 8a (Akita)**: `Akita_beta_CP41.260831.007.zip`
+  - SHA256: `250c3e0326c6fef27263e7520c734869406b0f4951714866262186bd33090793`
+  - Build: `akita_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 10 Pro (Blazer)**: `Blazer_beta_CP41.260831.007.zip`
+  - SHA256: `9189bce59f19cd48a0970df1e1e318e81da6e8d81cb2a9a9d33466703a8cc5cb`
+  - Build: `blazer_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 6a (Bluejay)**: `Bluejay_beta_CP41.260831.007.zip`
+  - SHA256: `889cb5404d1cf17bf041517b5f028f8c48476353e82f367a7a0e38547217e817`
+  - Build: `bluejay_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 9 Pro (Caiman)**: `Caiman_beta_CP41.260831.007.zip`
+  - SHA256: `5c5aacb29b17eb0eff9855e184cbed5f850cb9545a11a1ced5c8d009857da00c`
+  - Build: `caiman_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 7 Pro (Cheetah)**: `Cheetah_beta_CP41.260831.007.zip`
+  - SHA256: `b593381343abe489182d9be2a112f25460d351aa7a5c90ed70bc45f687d86cdc`
+  - Build: `cheetah_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 9 Pro Fold (Comet)**: `Comet_beta_CP41.260831.007.zip`
+  - SHA256: `80991e7fa7bf7d68a6c72b681589f681afb051c5f131e192a89e89790ff37471`
+  - Build: `comet_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel Fold (Felix)**: `Felix_beta_CP41.260831.007.zip`
+  - SHA256: `531a76354d48a4ebcb36efe30b0e67a8a18d9a452146c18cd2d90045a03220ea`
+  - Build: `felix_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 10 (Frankel)**: `Frankel_beta_CP41.260831.007.zip`
+  - SHA256: `0885ff3649553a890a539140d7568d21c3ba4aa0c002c62a8c89579c61959b4c`
+  - Build: `frankel_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 8 Pro (Husky)**: `Husky_beta_CP41.260831.007.zip`
+  - SHA256: `aa9dff4e99dc27eea6205bf50c7436a18e6bea308861313c98f09f952e99d391`
+  - Build: `husky_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 9 Pro XL (Komodo)**: `Komodo_beta_CP41.260831.007.zip`
+  - SHA256: `ebb9c89ce2b8613d86cf16d3a3c195aff3fcef4d5a2f5949ce386951e8ada4cf`
+  - Build: `komodo_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 7a (Lynx)**: `Lynx_beta_CP41.260831.007.zip`
+  - SHA256: `29440e8d26743b8ad4ae0ad7d1c21c0743bc22657db018f83ff10b6e645bb7cb`
+  - Build: `lynx_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 10 Pro XL (Mustang)**: `Mustang_beta_CP41.260831.007.zip`
+  - SHA256: `32508f47d29a28255781d02a349c1f7fc9c97156a1f8a42b4899788870140080`
+  - Build: `mustang_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 7 (Panther)**: `Panther_beta_CP41.260831.007.zip`
+  - SHA256: `0f3b93c2b2fd558c59da0d77b8de39332a33723fd1e6545ebb95eccbe57f94f2`
+  - Build: `panther_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 10 Pro Fold (Rango)**: `Rango_beta_CP41.260831.007.zip`
+  - SHA256: `df8d619dffbda94ce679a1afe24d070816a1585c1a8c31ec275fb3cdd77f62c3`
+  - Build: `rango_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 8 (Shiba)**: `Shiba_beta_CP41.260831.007.zip`
+  - SHA256: `a70a2b3f09372cd9e2db5411d7eab2b51f9d6d7ca4f503bc8434ebc68d90b426`
+  - Build: `shiba_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 10a (Stallion)**: `Stallion_beta_CP41.260831.007.zip`
+  - SHA256: `43893da6f419661b83ae991343760e6e186d3af937724ffb4c7e4746f2a10506`
+  - Build: `stallion_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel Tablet (Tangorpro)**: `Tangorpro_beta_CP41.260831.007.zip`
+  - SHA256: `85eec3d3fd73a5122ba8d578c2e395caa6224f6f983cc42d88d0a3a7df4264ca`
+  - Build: `tangorpro_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 9a (Tegu)**: `Tegu_beta_CP41.260831.007.zip`
+  - SHA256: `76e57109f9b1b2f0667ef475d47f4a831c224b8119a3811ada1e89e2ed40174c`
+  - Build: `tegu_beta-user 17 CP41.260831.007 16416850 release-keys`
+- **Pixel 9 (Tokay)**: `Tokay_beta_CP41.260831.007.zip`
+  - SHA256: `248b810892d6a4d2defc1230e7411ec0b52dc7ca10b7326616b359959050133c`
+  - Build: `tokay_beta-user 17 CP41.260831.007 16416850 release-keys`
+
 ## [2026-09-20]
 - **Pixel 11 (Cubs)**: `Cubs_beta_CP41.260828.004.A8.zip`
   - SHA256: `e46b1ee4c40d604dbb19e9eaaa747fc794417219c248ca1f4dbb6f87aee48171`
