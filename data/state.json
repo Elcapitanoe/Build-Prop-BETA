@@ -1,14 +1,14 @@
 {
   "$schema_version": "1.0.0",
-  "last_synced_at": "2026-09-24T23:08:49Z",
+  "last_synced_at": "2026-09-29T23:37:00Z",
   "active_target": {
     "major": 17,
     "qpr": 2,
     "url": "https://developer.android.com/about/versions/17/qpr2/download-ota"
   },
   "fingerprint": {
-    "build_id": "CP41.260831.007",
+    "build_id": "CP41.260831.007.A3",
     "security_patch": "2026-08-05",
-    "checksum_sha256": "3495fbaf854078d98cf4d14c234a4592528ca93fd4896cec155bae597b60da4f"
+    "checksum_sha256": "8b789f9936156652892946f7c04f7a55c068d0de431898b6cec73756165c6b11"
   }
 }
