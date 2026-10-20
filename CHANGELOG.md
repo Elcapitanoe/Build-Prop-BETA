@@ -2,6 +2,77 @@
  
 All notable changes and build releases are documented here.
  
+## [2026-10-20]
+- **Pixel 8a (Akita)**: `Akita_beta_DP11.261002.005.zip`
+  - SHA256: `17a7ef728b4f5aab829a903e8712f6297a9b51a71c234dfaaa57c0026cbe6e1b`
+  - Build: `akita_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 10 Pro (Blazer)**: `Blazer_beta_DP11.261002.005.zip`
+  - SHA256: `528401f2bffa6c482c3c9e032f61213e5b3875524a077429ffc5f82622d42337`
+  - Build: `blazer_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 6a (Bluejay)**: `Bluejay_beta_DP11.261002.005.zip`
+  - SHA256: `0a48ce21f7b7ece37241f695a5b40772fd6fb2b81948c92a1de0cf88ef0cf8ba`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 9 Pro (Caiman)**: `Caiman_beta_DP11.261002.005.zip`
+  - SHA256: `a9274f8789620cceada28fa6537a53d8f168656a32d7ea9d2c9569996e1de127`
+  - Build: `caiman_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 7 Pro (Cheetah)**: `Cheetah_beta_DP11.261002.005.zip`
+  - SHA256: `4b337ed8c494a15bc718b6d363568599c66d8dce525caa83980a4fe95a6a914c`
+  - Build: `cheetah_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 9 Pro Fold (Comet)**: `Comet_beta_DP11.261002.005.zip`
+  - SHA256: `6b00b3943042c65317a41791dac11dad649f59862a83abdd57e87eb6970cd1ac`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 11 (Cubs)**: `Cubs_beta_DP11.261002.005.zip`
+  - SHA256: `1a30e3d07e30ab954cf24d477369d855a96b9311e3d89bf6b6059e6d3819f5f6`
+  - Build: `cubs_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel Fold (Felix)**: `Felix_beta_DP11.261002.005.zip`
+  - SHA256: `8831903f1b75b417b7cd2ce15384abd0afe24a4142ff9d639214f8bc8df37870`
+  - Build: `felix_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 10 (Frankel)**: `Frankel_beta_DP11.261002.005.zip`
+  - SHA256: `6506c90dfcde66cd36a6ebb65b28aa2fd54fb8dc4203e024bf6bc4dadbccf93b`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 11 Pro (Grizzly)**: `Grizzly_beta_DP11.261002.005.zip`
+  - SHA256: `61dd78480c4507749dca35a41ad691b09097ce38a25d2406f02e276dd91d88f6`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 8 Pro (Husky)**: `Husky_beta_DP11.261002.005.zip`
+  - SHA256: `246c3345532e823cea05e72dbdc7b7d2355685fd5ce1afb94653a43d1d0afbe8`
+  - Build: `husky_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 11 Pro XL (Kodiak)**: `Kodiak_beta_DP11.261002.005.zip`
+  - SHA256: `369c54a947825813d4405a8432513b07c6c6caabf82deb8d10228216d5387fab`
+  - Build: `kodiak_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 9 Pro XL (Komodo)**: `Komodo_beta_DP11.261002.005.zip`
+  - SHA256: `960aa2b5cc3c72d149d44e4387d0f765c4e3d76edf548db752bb0fae24c03824`
+  - Build: `komodo_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 7a (Lynx)**: `Lynx_beta_DP11.261002.005.zip`
+  - SHA256: `00b6406ec46a4389a4b4a23694da2f9bc72236cc329ed81d40b92d679de2e993`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 10 Pro XL (Mustang)**: `Mustang_beta_DP11.261002.005.zip`
+  - SHA256: `c3b6d389c645be5b3f3d8fcf44d8eeffd57dab8a04fc513c2b813e8f426a3ddb`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 7 (Panther)**: `Panther_beta_DP11.261002.005.zip`
+  - SHA256: `8a389f5e7d409c5c008f57a14e3fb4c150730ba2dfcc5a4d70f4e8f990e5a6e0`
+  - Build: `panther_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 10 Pro Fold (Rango)**: `Rango_beta_DP11.261002.005.zip`
+  - SHA256: `f6c895feb166343f0a326f3ecd2981fb6f6fe91d7f7c14e4567ff6455c4a45d9`
+  - Build: `rango_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 8 (Shiba)**: `Shiba_beta_DP11.261002.005.zip`
+  - SHA256: `d51abf3a42c3d741da0e1b2fe8956069eb2addddddc3f8c301881c8216a5ec90`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 10a (Stallion)**: `Stallion_beta_DP11.261002.005.zip`
+  - SHA256: `caf293eddb17314e7a047b0cd8bf9713e73261510d9f0fe631ff94ac96516008`
+  - Build: `stallion_beta-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel Tablet (Tangorpro)**: `Tangorpro_beta_DP11.261002.005.zip`
+  - SHA256: `2575b3fa2cc321d9bc41e34d9d3a6954d92ba506a59472057f4c7f813de9160d`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 9a (Tegu)**: `Tegu_beta_DP11.261002.005.zip`
+  - SHA256: `805cb13c7e48a156d8006e90ae7a141db9922b96a4a2f2fa7f90935ce6225e61`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 9 (Tokay)**: `Tokay_beta_DP11.261002.005.zip`
+  - SHA256: `2f2443b5db1b6ac58c5b2696e5d6162cf95f94a1bc14ad6b678a66062a4aa49b`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+- **Pixel 11 Pro Fold (Yogi)**: `Yogi_beta_DP11.261002.005.zip`
+  - SHA256: `99abc6458ff94935918ebe72fa025ef5720002f0e34630fdffc4970abb09ddf0`
+  - Build: `generic_system_google-user 17 DP11.261002.005 16594701 release-keys`
+
 ## [2026-10-02]
 - **Pixel 8a (Akita)**: `Akita_beta_DP11.260918.006.zip`
   - SHA256: `b0c55197ab928b3a1809018e2dd1aef7efb7ffed2c7e5f423626ecd9367690f5`
