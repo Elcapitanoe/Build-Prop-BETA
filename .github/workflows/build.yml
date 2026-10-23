@@ -221,11 +221,11 @@ jobs:
           fi
 
           if [ "$IS_PRERELEASE" = "true" ]; then
-            TAG="alpha-$(date +%Y%m%d)"
+            TAG="v$(date -u +%y.%m%d)-alpha"
             PRERELEASE_FLAG="--prerelease"
             TITLE_LABEL="Pixel Props (Alpha Pre-Release)"
           else
-            TAG="beta-$(date +%Y%m%d)"
+            TAG="v$(date -u +%y.%m%d)"
             PRERELEASE_FLAG=""
             TITLE_LABEL="Pixel Props (Beta)"
           fi

@@ -59,8 +59,8 @@ Automated toolchain to fetch, extract, and build Magisk/KernelSU/APatch modules 
     2. `build`: Matrix parallel jobs per device (downloads OTA, unpacks images, synthesizes properties, packages module, and verifies duplicate status against existing releases).
     3. `release`: Aggregates module zips, creates/updates GitHub Release, appends artifacts to `CHANGELOG.md` via `update_changelog.py`, and posts notifications to Telegram.
 - **Tag Conventions**:
-  - Standard / Scheduled runs: `beta-YYYYMMDD` (Release)
-  - Pre-release manual runs: `alpha-YYYYMMDD` (Pre-Release)
+  - Standard / Scheduled runs: `vYY.MMDD` (Release)
+  - Pre-release manual runs: `vYY.MMDD-alpha` (Pre-Release)
 - **Duplicate Prevention**: Queries existing release assets via GitHub CLI (`gh`) to skip rebuilding already-published versions.
 - **Telegram Notifications**: Sends release summaries with direct asset download links and formatted device lists.
 
